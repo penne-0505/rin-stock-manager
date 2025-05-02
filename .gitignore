@@ -132,3 +132,6 @@ cython_debug/
 
 # IDE - JetBrains
 .idea/
+
+# poetry
+poetry.lock
