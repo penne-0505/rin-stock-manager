@@ -1,5 +1,3 @@
-import logging
-
 from flet import Column, ElevatedButton, Page, RouteChangeEvent, SnackBar, Text, app
 
 # services.auth_service からのインポートを変更
@@ -90,9 +88,9 @@ def main(pg: Page):
             )
             try:
                 pg.update()
-            except Exception as ex:
-                logging.error(f"pg.update() failed: {ex}")
-                # キャッチはするが、raiseしない
+            except Exception:
+                # ページアップデート中のエラー
+                pass
 
     pg.on_route_change = route_change
     pg.go(pg.route)
