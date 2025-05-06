@@ -69,9 +69,8 @@ class ReconnectWatcher:
         try:
             async with self._session_factory() as session:
                 async with session.head(f"{self._supabase_url}/rest/v1/") as resp:
-                    return resp.status == 200  # 200ならTrueを返す
-        except Exception as e:
-            logger.debug(f"Ping failed: {e}")
+                    return resp.status == 200
+        except Exception:
             return False
 
     async def _watch(self):
@@ -86,7 +85,6 @@ class ReconnectWatcher:
 
                 if online:
                     if was_offline:
-                        logger.info("Connection restored. Triggering sync.")
                         if self._event_notifier:
                             self._event_notifier("online")
                         for callback in self._on_reconnects:
@@ -99,29 +97,25 @@ class ReconnectWatcher:
                 else:
                     self._fail_count += 1
                     if not was_offline:
-                        logger.info("Connection lost.")
                         if self._event_notifier:
                             self._event_notifier("offline")
                     was_offline = True
 
                 interval = self._ping_interval * (2 ** (self._fail_count // 3))
                 interval = min(interval, self._max_backoff)
-                logger.debug(f"Next ping in {interval} seconds.")
                 await self._sleep(interval)
 
         except asyncio.CancelledError:
-            logger.info("ReconnectWatcher task cancelled.")
             raise
 
         finally:
-            logger.debug("ReconnectWatcher cleanup complete.")
+            pass
 
     def start(self):
         """接続監視タスクを開始します。"""
         if not self._running:
             self._running = True
             self._task = asyncio.create_task(self._watch())
-            logger.info("ReconnectWatcher started.")
 
     async def stop(self):
         """接続監視タスクを停止します。"""
@@ -132,4 +126,3 @@ class ReconnectWatcher:
                 await self._task
             except asyncio.CancelledError:
                 pass
-            logger.info("ReconnectWatcher stopped.")
