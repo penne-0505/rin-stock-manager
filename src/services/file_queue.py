@@ -9,9 +9,11 @@ from pathlib import Path
 import aiofiles
 import aiofiles.os as aios
 
-from utils.paths import DATA_DIR
-from utils.paths import MAX_BYTES as DEFAULT_MAX_BYTES  # DEFAULT_MAX_BYTES をインポート
-from utils.paths import QUEUE_FILE as DEFAULT_QUEUE_FILE
+from constants.paths import DATA_DIR
+from constants.paths import (
+    MAX_BYTES as DEFAULT_MAX_BYTES,
+)
+from constants.paths import QUEUE_FILE as DEFAULT_QUEUE_FILE
 
 logger = logging.getLogger(__name__)
 
