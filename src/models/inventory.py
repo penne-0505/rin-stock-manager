@@ -8,6 +8,9 @@ class InventoryItem(BaseModel):
     name: str
     price: float
 
+    def __table_name__(cls) -> str:
+        return "inventory_items"
+
 
 class InventoryTransaction(BaseModel):
     id: str
@@ -15,3 +18,6 @@ class InventoryTransaction(BaseModel):
     change: int  # + 入庫 / – 売上
     type: str  # 'sale' | 'restock'
     timestamp: datetime
+
+    def __table_name__(cls) -> str:
+        return "inventory_transactions"
