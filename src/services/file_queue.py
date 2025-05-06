@@ -42,7 +42,6 @@ class FileQueue:
         async with self._lock:  # ロックを取得
             logger.debug("push: lock acquired.")
             try:
-                # newline='' を追加して改行コードの変換を抑制
                 async with aiofiles.open(
                     self.queue_file, "a", encoding="utf-8", newline=""
                 ) as f:
@@ -122,10 +121,7 @@ class FileQueue:
         # push からの呼び出しでロックされていれば十分。
         # テストで直接呼んでいる箇所があるため、堅牢性のためにここでもロックを追加する。
         logger.debug("_gc_if_needed: called (lock should already be held by push).")
-        # async with self._lock: # このロック取得がデッドロックの原因
-        #     logger.debug("_gc_if_needed: lock acquired.") # このログも不要に
         temp_queue_file = self.queue_file.with_suffix(".tmp")
-        # try ブロック全体を1レベルインデント
         try:
             current_size = await self.size()  # size() はロックを取得しない
             logger.info(
@@ -167,10 +163,8 @@ class FileQueue:
             pass
         except Exception as e:
             logger.error(f"GC処理中にエラーが発生しました: {e}", exc_info=True)
-            # GC中のエラーはロギングするが、メインの処理を止めない方が良い場合もある。
             # raise # ここでraiseすると、push処理全体が失敗する可能性がある。
         finally:
-            # logger.debug("_gc_if_needed: releasing lock.") # ロック解放もpush側で行うため不要
             if await aios.path.exists(temp_queue_file):
                 try:
                     await aios.unlink(temp_queue_file)
