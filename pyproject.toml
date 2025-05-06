@@ -1,16 +1,29 @@
-[project]
+[tool.poetry]
 name = "rin-stock-manager"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "penne",email = "penne0505pp@gmail.com"}
-]
+authors = ["penne <penne0505pp@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-]
 
+[tool.poetry.dependencies]
+python = "^3.12.9"
+supabase = "^2.15.0"
+pydantic = "^2.11.4"
+flet = ">=0.27.6,<0.28.0"
+aiofiles = "^24.1.0"
+tenacity = "^9.1.2"
+
+[[tool.poetry.packages]]
+include = "src"
+
+[tool.poetry.group.dev.dependencies]
+python-dotenv = "^1.0.1"
+pytest-asyncio = "^0.23.7"
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src",]
+testpaths = ["tests",]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
