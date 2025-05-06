@@ -9,6 +9,7 @@ class SyncRecord(BaseModel):
     payload: dict
     synced: bool
     timestamp: datetime
+    user_id: str
 
     def __table_name__(cls) -> str:
         return "sync_records"

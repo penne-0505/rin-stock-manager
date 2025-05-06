@@ -18,6 +18,7 @@ class InventoryTransaction(BaseModel):
     change: int  # + 入庫 / – 売上
     type: str  # 'sale' | 'restock'
     timestamp: datetime
+    user_id: str
 
     def __table_name__(cls) -> str:
         return "inventory_transactions"
