@@ -70,8 +70,8 @@ class ReconnectWatcher:
             async with self._session_factory() as session:
                 async with session.head(f"{self._supabase_url}/rest/v1/") as resp:
                     return resp.status == 200  # 200ならTrueを返す
-        except Exception as e:
-            logger.debug(f"Ping failed: {e}")
+        except Exception:
+            # ping送信中にエラーが発生した場合
             return False
 
     async def _watch(self):
@@ -92,8 +92,9 @@ class ReconnectWatcher:
                         for callback in self._on_reconnects:
                             try:
                                 await callback()
-                            except Exception as e:
-                                logger.error(f"Reconnect callback failed: {e}")
+                            except Exception:
+                                # コールバック実行中にエラーが発生した場合
+                                pass
                     self._fail_count = 0
                     was_offline = False
                 else:
@@ -110,11 +111,12 @@ class ReconnectWatcher:
                 await self._sleep(interval)
 
         except asyncio.CancelledError:
-            logger.info("ReconnectWatcher task cancelled.")
-            raise
+            # タスクがキャンセルされた場合
+            pass
 
         finally:
-            logger.debug("ReconnectWatcher cleanup complete.")
+            # タスクが終了したとき
+            pass
 
     def start(self):
         """接続監視タスクを開始します。"""
@@ -131,5 +133,5 @@ class ReconnectWatcher:
             try:
                 await self._task
             except asyncio.CancelledError:
+                # タスクがキャンセルされた場合
                 pass
-            logger.info("ReconnectWatcher stopped.")
