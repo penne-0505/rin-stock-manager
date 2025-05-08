@@ -4,17 +4,17 @@ from utils.config import settings
 from utils.utils import get_param_value
 
 
-class AuthService:
+class SupabaseClient:
     _supabase_client_instance: AsyncClient | None = None
 
     def __init__(self):
         self.SUPABASE_URL = settings.SUPABASE_URL
         self.SUPABASE_ANON_KEY = settings.SUPABASE_ANON_KEY
 
-        if AuthService._supabase_client_instance is None:
+        if SupabaseClient._supabase_client_instance is None:
             try:
                 if self.SUPABASE_URL and self.SUPABASE_ANON_KEY:
-                    AuthService._supabase_client_instance = create_client(
+                    SupabaseClient._supabase_client_instance = create_client(
                         self.SUPABASE_URL, self.SUPABASE_ANON_KEY
                     )
                 else:
@@ -24,7 +24,7 @@ class AuthService:
                 # Supabase クライアントの初期化中にエラーが発生した場合
                 pass
 
-        self.supabase_client = AuthService._supabase_client_instance
+        self.supabase_client = SupabaseClient._supabase_client_instance
 
     async def initiate_oauth_login(self) -> str | None:
         """Google OAuth URL を取得する"""

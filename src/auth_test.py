@@ -1,10 +1,10 @@
 from flet import Column, ElevatedButton, Page, RouteChangeEvent, SnackBar, Text, app
 
 # services.auth_service からのインポートを変更
-from services.auth_service import AuthService
+from services.client_service import SupabaseClient
 
 # AuthService のインスタンスを作成
-auth_service = AuthService()
+auth_service = SupabaseClient()
 
 
 async def handle_login_button_click(pg: Page):
