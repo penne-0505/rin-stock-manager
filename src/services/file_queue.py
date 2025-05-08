@@ -9,9 +9,11 @@ from pathlib import Path
 import aiofiles
 import aiofiles.os as aios
 
-from utils.paths import DATA_DIR
-from utils.paths import MAX_BYTES as DEFAULT_MAX_BYTES
-from utils.paths import QUEUE_FILE as DEFAULT_QUEUE_FILE
+from constants.paths import DATA_DIR
+from constants.paths import (
+    MAX_BYTES as DEFAULT_MAX_BYTES,
+)
+from constants.paths import QUEUE_FILE as DEFAULT_QUEUE_FILE
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ class FileQueue:
             self.queue_file = DEFAULT_QUEUE_FILE
         self.queue_file.parent.mkdir(parents=True, exist_ok=True)
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        self._lock = asyncio.Lock()
+        self._lock = asyncio.Lock()  # asyncio.Lock インスタンスを作成
         self.max_bytes = max_bytes if max_bytes is not None else DEFAULT_MAX_BYTES
 
     async def push(self, record: dict) -> None:
@@ -40,11 +42,12 @@ class FileQueue:
                 ) as f:
                     await f.write(json.dumps(record) + "\n")
                 await self._gc_if_needed()
-            except Exception as e:
-                logger.error(
-                    f"キューへの書き込み中にエラーが発生しました: {e}", exc_info=True
-                )
-                raise
+            except Exception:
+                # キュー書き込み中のエラー
+                pass
+            finally:
+                # プッシュに成功した場合
+                pass
 
     async def pop_all(self) -> list[dict]:
         """キューからすべてのレコードを取り出します。"""

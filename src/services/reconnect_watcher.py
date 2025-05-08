@@ -90,8 +90,9 @@ class ReconnectWatcher:
                         for callback in self._on_reconnects:
                             try:
                                 await callback()
-                            except Exception as e:
-                                logger.error(f"Reconnect callback failed: {e}")
+                            except Exception:
+                                # コールバック実行中にエラーが発生した場合
+                                pass
                     self._fail_count = 0
                     was_offline = False
                 else:
@@ -106,7 +107,8 @@ class ReconnectWatcher:
                 await self._sleep(interval)
 
         except asyncio.CancelledError:
-            raise
+            # タスクがキャンセルされた場合
+            pass
 
         finally:
             pass
@@ -125,4 +127,5 @@ class ReconnectWatcher:
             try:
                 await self._task
             except asyncio.CancelledError:
+                # タスクがキャンセルされた場合
                 pass

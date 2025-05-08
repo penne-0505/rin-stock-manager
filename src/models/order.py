@@ -17,6 +17,7 @@ class Order(BaseModel):
     items: List[OrderItem]
     total: float
     timestamp: datetime
+    user_id: str
 
     def __table_name__(cls) -> str:
         return "orders"

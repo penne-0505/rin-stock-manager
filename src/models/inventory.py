@@ -18,6 +18,7 @@ class InventoryTransaction(BaseModel):
     change: int
     type: str
     timestamp: datetime
+    user_id: str
 
     def __table_name__(cls) -> str:
         return "inventory_transactions"
