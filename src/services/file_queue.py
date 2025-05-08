@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 from pathlib import Path
 
@@ -14,8 +13,6 @@ from constants.paths import (
     MAX_BYTES as DEFAULT_MAX_BYTES,
 )
 from constants.paths import QUEUE_FILE as DEFAULT_QUEUE_FILE
-
-logger = logging.getLogger(__name__)
 
 
 class FileQueue:
@@ -34,7 +31,6 @@ class FileQueue:
         self.max_bytes = max_bytes if max_bytes is not None else DEFAULT_MAX_BYTES
 
     async def push(self, record: dict) -> None:
-        """レコードをキューに追加します。"""
         async with self._lock:
             try:
                 async with aiofiles.open(
@@ -43,14 +39,11 @@ class FileQueue:
                     await f.write(json.dumps(record) + "\n")
                 await self._gc_if_needed()
             except Exception:
-                # キュー書き込み中のエラー
                 pass
             finally:
-                # プッシュに成功した場合
                 pass
 
     async def pop_all(self) -> list[dict]:
-        """キューからすべてのレコードを取り出します。"""
         async with self._lock:
             if not await aios.path.exists(self.queue_file):
                 return []
@@ -62,38 +55,27 @@ class FileQueue:
                     async for line in f:
                         try:
                             items.append(json.loads(line))
-                        except json.JSONDecodeError as e:
-                            logger.warning(
-                                f"キュー内の無効なJSON行をスキップしました: {line.strip()} - {e}"
-                            )
+                        except json.JSONDecodeError:
                             pass
 
                 await aios.unlink(self.queue_file)
                 return items
             except FileNotFoundError:
                 return []
-            except Exception as e:
-                logger.error(
-                    f"キューからの読み取り中にエラーが発生しました: {e}", exc_info=True
-                )
+            except Exception:
                 raise
 
     async def size(self) -> int:
-        """キューファイルの現在のサイズをバイト単位で返します。"""
         try:
             if await aios.path.exists(self.queue_file):
                 stat_result = await aios.stat(self.queue_file)
                 return stat_result.st_size
             else:
                 return 0
-        except Exception as e:
-            logger.error(
-                f"キューサイズの取得中にエラーが発生しました: {e}", exc_info=True
-            )
+        except Exception:
             return 0
 
     async def _gc_if_needed(self):
-        """キューファイルが最大サイズを超えた場合にガベージコレクションを実行します。"""
         temp_queue_file = self.queue_file.with_suffix(".tmp")
         try:
             current_size = await self.size()
@@ -117,16 +99,12 @@ class FileQueue:
             await aios.rename(temp_queue_file, self.queue_file)
 
         except FileNotFoundError:
-            logger.warning("GC処理中にキューファイルが見つかりませんでした。")
             pass
-        except Exception as e:
-            logger.error(f"GC処理中にエラーが発生しました: {e}", exc_info=True)
+        except Exception:
+            pass
         finally:
             if await aios.path.exists(temp_queue_file):
                 try:
                     await aios.unlink(temp_queue_file)
-                except Exception as e_unlink:
-                    logger.error(
-                        f"一時GCファイルの削除中にエラーが発生しました: {e_unlink}",
-                        exc_info=True,
-                    )
+                except Exception:
+                    pass
