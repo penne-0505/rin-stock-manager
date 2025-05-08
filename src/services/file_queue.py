@@ -31,12 +31,7 @@ class FileQueue:
         self.queue_file.parent.mkdir(parents=True, exist_ok=True)
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._lock = asyncio.Lock()  # asyncio.Lock インスタンスを作成
-        self.max_bytes = (
-            max_bytes if max_bytes is not None else DEFAULT_MAX_BYTES
-        )  # self.max_bytes を初期化
-        logger.info(
-            f"FileQueue initialized. queue_file: {self.queue_file}, max_bytes: {self.max_bytes}"
-        )
+        self.max_bytes = max_bytes if max_bytes is not None else DEFAULT_MAX_BYTES
 
     async def push(self, record: dict) -> None:
         """レコードをキューに追加します。"""
@@ -50,13 +45,12 @@ class FileQueue:
                     await f.write(json.dumps(record) + "\n")
                 # _gc_if_needed はロック内で呼び出す
                 await self._gc_if_needed()
-            except Exception as e:
-                logger.error(
-                    f"キューへの書き込み中にエラーが発生しました: {e}", exc_info=True
-                )
-                raise
+            except Exception:
+                # キュー書き込み中のエラー
+                pass
             finally:
-                logger.debug("push: releasing lock.")
+                # プッシュに成功した場合
+                pass
 
     async def pop_all(self) -> list[dict]:
         """キューからすべてのレコードを取り出します。"""
