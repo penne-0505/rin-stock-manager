@@ -135,3 +135,6 @@ cython_debug/
 
 # poetry
 poetry.lock
+
+# github copilot
+.github/
