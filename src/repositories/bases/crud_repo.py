@@ -69,7 +69,7 @@ class CrudRepository(ABC, Generic[T]):
             q = self.client.table(self._table).insert(entity.model_dump())
             if returning:
                 data = await q.single()
-                return entity.__class__.parse_obj(data)
+                return entity.__class__.model_validate(data)
             await q.execute()
             return None
         except Exception as e:
@@ -217,8 +217,7 @@ class CrudRepository(ABC, Generic[T]):
 
         Args:
             entity: 挿入または更新するエンティティ。
-            on_conflict: 競合が発生した場合の処理方法を指定するカラム名またはカラム名のリスト。
-                         デフォルトは "id"。
+            on_conflict: 競合が発生した場合の処理方法を指定するカラム名またはカラム名のリスト。デフォルトは "id"。
             returning: 操作されたエンティティを返すかどうか。デフォルトはTrue。
 
         Returns:
@@ -308,7 +307,7 @@ class CrudRepository(ABC, Generic[T]):
 
         Args:
             filters: 適用するフィルタ。キーの末尾が "_gte" の場合は ">="、
-                     "_lte" の場合は "<="、それ以外は "==" として扱われます。
+            "_lte" の場合は "<="、それ以外は "==" として扱われます。
 
         Returns:
             フィルタが適用されたクエリオブジェクト。
@@ -336,4 +335,4 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             Pydanticモデルのインスタンス。
         """
-        return T.__constraints__[0].parse_obj(raw)  # Pydantic generic hack
+        return T.__constraints__[0].model_validate(raw)  # Pydantic generic hack
