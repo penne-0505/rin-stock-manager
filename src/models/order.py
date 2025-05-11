@@ -25,7 +25,7 @@ class Order(BaseModel):
     queued_at: datetime | None = None
     completed_at: datetime | None = None
     status: OrderStatus
-    user_id: UUID
+    user_id: UUID | None = None
 
     def __table_name__(cls) -> str:
         return "orders"

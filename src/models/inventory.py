@@ -14,6 +14,7 @@ class InventoryItem(BaseModel):
     stock: int
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    user_id: UUID | None = None
 
     def __table_name__(cls) -> str:
         return "inventory_items"
@@ -26,7 +27,7 @@ class InventoryTransaction(BaseModel):
     type: TransactionMode
     created_at: datetime | None = None
     updated_at: datetime | None = None
-    user_id: UUID
+    user_id: UUID | None = None
 
     def __table_name__(cls) -> str:
         return "inventory_transactions"
