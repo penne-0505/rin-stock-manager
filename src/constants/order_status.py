@@ -1,7 +1,7 @@
-from enum import Enum, auto
+from enum import Enum
 
 
 class OrderStatus(Enum):
-    PREPARING = auto()
-    COMPLETED = auto()
-    CANCELED = auto()
+    PREPARING = "preparing"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
