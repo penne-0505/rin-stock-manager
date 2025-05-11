@@ -3,6 +3,8 @@ from typing import List
 
 from pydantic import BaseModel
 
+from constants.order_status import OrderStatus
+
 
 class OrderItem(BaseModel):
     inventory_item_id: str
@@ -17,6 +19,7 @@ class Order(BaseModel):
     items: List[OrderItem]
     total: float
     timestamp: datetime
+    status: OrderStatus
     user_id: str
 
     def __table_name__(cls) -> str:
