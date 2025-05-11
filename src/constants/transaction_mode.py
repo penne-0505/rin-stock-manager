@@ -1,6 +1,6 @@
-from enum import Enum, auto
+from enum import Enum
 
 
 class TransactionMode(Enum):
-    SALE = auto()
-    RESTOCK = auto()
+    SALE = "sale"
+    RESTOCK = "restock"
