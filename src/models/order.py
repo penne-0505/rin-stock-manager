@@ -20,7 +20,10 @@ class Order(BaseModel):
     id: UUID | None = None
     items: list[OrderItem]
     total: Decimal
-    timestamp: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    queued_at: datetime | None = None
+    completed_at: datetime | None = None
     status: OrderStatus
     user_id: UUID
 
