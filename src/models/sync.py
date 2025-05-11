@@ -1,15 +1,16 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class SyncRecord(BaseModel):
-    id: str
+    id: UUID | None = None
     record_type: str  # 対象テーブル名
     payload: dict
     synced: bool
     timestamp: datetime
-    user_id: str
+    user_id: UUID
 
     def __table_name__(cls) -> str:
         return "sync_records"

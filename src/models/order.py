@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List
+from decimal import Decimal
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -7,7 +8,8 @@ from constants.order_status import OrderStatus
 
 
 class OrderItem(BaseModel):
-    inventory_item_id: str
+    order_id: UUID
+    inventory_item_id: UUID
     quantity: int
 
     def __table_name__(cls) -> str:
@@ -15,12 +17,12 @@ class OrderItem(BaseModel):
 
 
 class Order(BaseModel):
-    id: str
-    items: List[OrderItem]
-    total: float
+    id: UUID | None = None
+    items: list[OrderItem]
+    total: Decimal
     timestamp: datetime
     status: OrderStatus
-    user_id: str
+    user_id: UUID
 
     def __table_name__(cls) -> str:
         return "orders"
