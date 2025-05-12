@@ -167,7 +167,7 @@ class CrudRepository(ABC, Generic[T]):
         q = self.client.table(self._table).select("*")
         if query:
             q = q.text(query)
-        data = await q.execute()
+        data = q.execute()
         return [self._model_from(d) for d in data]
 
     async def init_query(self) -> Any:
@@ -191,7 +191,7 @@ class CrudRepository(ABC, Generic[T]):
             一致するエンティティの数。
         """
         q = query.select("id", count="exact")
-        return await q.execute()
+        return q.execute()
 
     async def exists(self, *, query: Any | None = None) -> bool:
         """
