@@ -5,7 +5,6 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from constants.db_conditions import Filter, OrderBy
 from services.app_services.client_service import SupabaseClient
 from utils.errors import (
     ConflictError,
@@ -30,22 +29,24 @@ class CrudRepository(ABC, Generic[T]):
         _table: 操作対象のテーブル名。
     """
 
-    def __init__(self, client: SupabaseClient, table: str) -> None:
+    def __init__(self, client: SupabaseClient, table: str, model_cls: type[T]) -> None:
         """
         CrudRepositoryのインスタンスを初期化します。
 
         Args:
             client: Supabaseクライアント。
             table: 操作対象のテーブル名。
+            model_cls: Pydanticモデルクラス。
 
         Raises:
             RepositoryError: SupabaseClientが初期化されていない場合。
         """
-        if not client.supabase_client:
+        if not client:
             raise RepositoryError("SupabaseClient is not initialized.")
 
-        self.client = client.supabase_client
+        self.client = client
         self._table = table
+        self._model_cls = model_cls
 
     # ---------- 基本 CRUD ----------
     async def create(self, entity: T, *, returning: bool = True) -> T | None:
@@ -68,7 +69,7 @@ class CrudRepository(ABC, Generic[T]):
             if returning:
                 data = await q.single()
                 return entity.__class__.model_validate(data)
-            await q.execute()
+            q.execute()
             return None
         except Exception as e:
             if isinstance(e, ConflictError):
@@ -151,56 +152,58 @@ class CrudRepository(ABC, Generic[T]):
     async def list(
         self,
         *,
-        filters: Filter | None = None,
-        order_by: OrderBy | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
+        query: Any | None = None,
     ) -> list[T]:
         """
-        フィルタ、ソート順、制限、オフセットに基づいてエンティティのリストを取得します。
+        クエリを使用してエンティティのリストを取得します。
+        utils/query_utils.pyのQueryFilterUtilsを使用してフィルタリングできます。
 
         Args:
-            filters: 適用するフィルタ。
-            order_by: ソート順。
-            limit: 取得する最大レコード数。
-            offset: スキップするレコード数。
+            query: SQLクエリ文字列。
 
         Returns:
-            エンティティのリスト。
+            取得されたエンティティのリスト。
         """
-        q = self._apply_filters(filters)
-        if order_by:
-            q = q.order(*order_by) if isinstance(order_by, list) else q.order(order_by)
-        if limit:
-            q = q.limit(limit, offset or 0)
+        q = self.client.table(self._table).select("*")
+        if query:
+            q = q.text(query)
         data = await q.execute()
         return [self._model_from(d) for d in data]
 
-    async def count(self, *, filters: Filter | None = None) -> int:
+    async def init_query(self) -> Any:
         """
-        指定されたフィルタに一致するエンティティの数をカウントします。
+        初期クエリを取得します。
+
+        Returns:
+            初期クエリオブジェクト。
+        """
+        # クエリ用のオブジェクトを返す
+        return self.client.table(self._table).select("*")
+
+    async def count(self, *, query: Any | None = None) -> int:
+        """
+        指定されたクエリに一致するエンティティの数をカウントします。
 
         Args:
-            filters: 適用するフィルタ。
+            query: 適用するクエリ。
 
         Returns:
             一致するエンティティの数。
         """
-        q = self._apply_filters(filters).select("id", count="exact")
-        _, count = await q.execute()
-        return count
+        q = query.select("id", count="exact")
+        return await q.execute()
 
-    async def exists(self, *, filters: Filter | None = None) -> bool:
+    async def exists(self, *, query: Any | None = None) -> bool:
         """
-        指定されたフィルタに一致するエンティティが存在するかどうかを確認します。
+        指定されたクエリに一致するエンティティが存在するかどうかを確認します。
 
         Args:
-            filters: 適用するフィルタ。
+            query: 適用するクエリ。
 
         Returns:
             エンティティが存在する場合はTrue、そうでない場合はFalse。
         """
-        return (await self.count(filters=filters)) > 0
+        return (await self.count(query=query)) > 0
 
     # ---------- Supabase/PostgREST 特化 ----------
     async def upsert(
@@ -259,7 +262,7 @@ class CrudRepository(ABC, Generic[T]):
         q = self.client.table(self._table).insert(
             [e.model_dump() for e in entities], ignore_duplicates=ignore_conflict
         )
-        data = await q.execute()
+        data = q.execute()
         return [self._model_from(d) for d in data]
 
     async def bulk_get(self, ids: list[str]) -> list[T]:
@@ -275,7 +278,7 @@ class CrudRepository(ABC, Generic[T]):
         if not ids:
             return []
         q = self.client.table(self._table).select("*").in_("id", ids)
-        data = await q.execute()
+        data = q.execute()
         return [self._model_from(d) for d in data]
 
     async def bulk_update(
@@ -297,7 +300,7 @@ class CrudRepository(ABC, Generic[T]):
         if not rows:
             return []
         q = self.client.table(self._table).upsert(rows, on_conflict=key)
-        data = await q.execute()
+        data = q.execute()
         return [self._model_from(d) for d in data]
 
     # ---------- ロック ----------
@@ -314,39 +317,26 @@ class CrudRepository(ABC, Generic[T]):
         """
         return await self.get(id_, for_update=True)
 
-    # ---------- 内部ヘルパ ----------
-    def _apply_filters(self, filters: Filter | None):
+    def _model_from(self, raw: dict[str, Any]) -> T:
         """
-        クエリにフィルタを適用します。
+        生の辞書データをPydanticモデルに変換します。
 
         Args:
-            filters: 適用するフィルタ。キーの末尾が "_gte" の場合は ">="、
-            "_lte" の場合は "<="、それ以外は "==" として扱われます。
-
-        Returns:
-            フィルタが適用されたクエリオブジェクト。
-        """
-        q = self.client.table(self._table).select("*")
-        if filters:
-            for k, v in filters.items():
-                if k.endswith("_gte"):
-                    q = q.gte(k[:-4], v)
-                elif k.endswith("_lte"):
-                    q = q.lte(k[:-4], v)
-                else:
-                    q = q.eq(k, v)
-        return q
-
-    @staticmethod
-    def _model_from(raw: dict[str, Any]) -> T:  # type: ignore[override]
-        """
-        生の辞書データからPydanticモデルのインスタンスを生成します。
-        ジェネリック型Tの具体的な型を取得するためのハックを使用しています。
-
-        Args:
-            raw: Pydanticモデルに変換する生の辞書データ。
+            raw: 生の辞書データ。
 
         Returns:
             Pydanticモデルのインスタンス。
         """
-        return T.__constraints__[0].model_validate(raw)  # Pydantic generic hack
+        return self._model_cls.model_validate(raw)
+
+    def dump(self, entity: T) -> dict[str, Any]:
+        """
+        Pydanticモデルのインスタンスを辞書形式に変換します。
+
+        Args:
+            entity: 変換するPydanticモデルのインスタンス。
+
+        Returns:
+            辞書形式のデータ。
+        """
+        return entity.model_dump()
