@@ -32,7 +32,7 @@ class SupabaseClient:
             # Supabase クライアントが初期化されていない場合
             return None
         try:
-            res = await self.supabase_client.auth.sign_in_with_oauth(
+            res = self.supabase_client.auth.sign_in_with_oauth(
                 {
                     "provider": "google",
                     "options": {"redirect_to": "http://localhost:8550/auth/callback"},
@@ -49,50 +49,40 @@ class SupabaseClient:
         """redirect URI に戻ったときの処理: トークンをセット→ユーザー情報取得"""
         if not self.supabase_client:
             # Supabase クライアントが初期化されていない場合
+            print("Supabaseのクライアントが初期化されていません。")
             return None
 
         code = get_param_value(url, "code")
 
         if not code:
             # URL に code パラメータがない場合
+            print("URLにcodeパラメータがありません。")
             return None
 
         try:
-            exchange_response = (
-                await self.supabase_client.auth.exchange_code_for_session(
-                    {"auth_code": code}
-                )
+            exchange_response = self.supabase_client.auth.exchange_code_for_session(
+                {"auth_code": code}
             )
+
             if not exchange_response or not exchange_response.session:
                 # トークン交換失敗
+                print("トークン交換に失敗しました。")
                 return None
 
-        except Exception:
+        except Exception as e:
             # トークン交換中のエラー
+            print(f"トークン交換中にエラーが発生しました。{e}")
             return None
 
         try:
-            user_response = await self.supabase_client.auth.get_user()
+            user_response = self.supabase_client.auth.get_user()
             if user_response and user_response.user:
                 return user_response.user, None
             else:
                 # ユーザー情報取得失敗
+                print("ユーザー情報の取得に失敗しました。")
                 return None
-        except Exception:
+        except Exception as e:
             # ユーザー情報取得中のエラー
-            return None
-
-    async def get_inventory_data(self) -> list | None:
-        """在庫データを取得する"""
-        if not self.supabase_client:
-            return None
-        try:
-            resp = (
-                await self.supabase_client.table("inventory_items")
-                .select("*")
-                .execute()
-            )
-            return resp.data
-        except Exception:
-            # データ取得中のエラー
+            print(f"ユーザー情報取得中にエラーが発生しました。{e}")
             return None
