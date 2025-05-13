@@ -4,6 +4,7 @@ from constants.order_status import OrderStatus
 from models.order import Order, OrderItem
 from repositories.concrete.inventory_item_repo import InventoryItemRepository
 from repositories.concrete.order_repo import OrderItemRepository, OrderRepository
+from utils.query_utils import QueryFilterUtils
 
 
 class OrderService:
@@ -34,7 +35,49 @@ class OrderService:
 
         await self.order_repo.create(order)
 
-    # TODO: 続き書く。Obsidianのusecase_process_flowに書いた内容を参考にする
+    async def update_order(
+        self,
+        order_id: str,
+        items: list[OrderItem],
+    ) -> Order:
+        """
+        注文、それに関連するアイテム群をリセット ->
+        1. 関係していた、Order、InventoryItemを取得
+        2. Orderのitemsを更新(itemsを新しいものに置き換え)
+        3. 取得したInventoryItemのstockを、OrderItemのquantity分だけ増減させて保持しておく
+        4. 関係するInventoryTransactionを削除
+        5. 更新後のOrder,InventoryItemから、InventoryTransactionを作成
+        7. Orderのtotalを計算して保持
+        8. 保持していたInventoryItemのstockを更新
+        9. Orderのitems,totalを更新
+        10. Orderを返す
+        (終了)
+
+        Order取得、紐づけられたOrderItem取得のためのクエリ作成、listでOrderItem取得、OrderItemからInventoryItemのIDを取得、
+        InventoryItemのIDを元にInventoryItemを取得するためのクエリ作成、InventoryItem取得、InventoryItemのstockを更新、
+
+        Orderのitemsを更新、totalを再計算、各InventoryItemに対してInventoryTransactionを作成、Orderをreturn
+        """
+
+        # 1. 関係していた、Order、InventoryItemを取得
+        order = await self.order_repo.get_by_id(order_id)
+        base_query = self.order_item_repo._get_base_query()
+        order_item_query = QueryFilterUtils().filter_eq(
+            base_query, "order_id", order_id
+        )
+        order_items = await self.order_item_repo.list(order_item_query)
+
+        if not order:
+            raise ValueError("注文が見つかりません")
+        if not inventory_items:
+            raise ValueError("在庫アイテムが見つかりません")
+
+        # 2. Orderのitemsを更新(itemsを新しいものに置き換え)
+        order.items = items
+
+        # 3. 取得したInventoryItemのstockを、OrderItemのquantity分だけ増減させて保持しておく
+
+        return
 
     async def calculate_total(self, items: list[OrderItem]) -> Decimal:
         if not items:
