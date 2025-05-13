@@ -1,11 +1,8 @@
 import asyncio
-import logging
 from datetime import datetime, timezone
 from typing import Awaitable, Callable
 
 import aiohttp
-
-logger = logging.getLogger(__name__)
 
 
 class ReconnectWatcher:
@@ -31,6 +28,7 @@ class ReconnectWatcher:
         ping_interval: int = 5,
     ):
         """Supabase URL やコールバック、依存関係を指定して初期化します。"""
+        # このあたりのハードコーディングは後で修正する。MVPではぎりないからあとで。
         self._supabase_url = supabase_url.rstrip("/")
         self._running = False
         self._task: asyncio.Task | None = None
@@ -86,7 +84,6 @@ class ReconnectWatcher:
 
                 if online:
                     if was_offline:
-                        logger.info("Connection restored. Triggering sync.")
                         if self._event_notifier:
                             self._event_notifier("online")
                         for callback in self._on_reconnects:
@@ -100,14 +97,12 @@ class ReconnectWatcher:
                 else:
                     self._fail_count += 1
                     if not was_offline:
-                        logger.info("Connection lost.")
                         if self._event_notifier:
                             self._event_notifier("offline")
                     was_offline = True
 
                 interval = self._ping_interval * (2 ** (self._fail_count // 3))
                 interval = min(interval, self._max_backoff)
-                logger.debug(f"Next ping in {interval} seconds.")
                 await self._sleep(interval)
 
         except asyncio.CancelledError:
@@ -123,7 +118,6 @@ class ReconnectWatcher:
         if not self._running:
             self._running = True
             self._task = asyncio.create_task(self._watch())
-            logger.info("ReconnectWatcher started.")
 
     async def stop(self):
         """接続監視タスクを停止します。"""
