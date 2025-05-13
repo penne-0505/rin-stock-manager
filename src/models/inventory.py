@@ -16,18 +16,18 @@ class InventoryItem(BaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(cls) -> str:
+    def __table_name__() -> str:
         return "inventory_items"
 
 
 class InventoryTransaction(BaseModel):
     id: UUID | None = None
     item_id: UUID
-    change: int  # 正の値は入庫、負の値は売上(出庫)
+    change: int  # 正の値は入庫、負の値は売上(出庫)。個数。
     type: TransactionMode
     created_at: datetime | None = None
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(cls) -> str:
+    def __table_name__() -> str:
         return "inventory_transactions"

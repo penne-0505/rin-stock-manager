@@ -12,7 +12,7 @@ class OrderItem(BaseModel):
     inventory_item_id: UUID
     quantity: int
 
-    def __table_name__(cls) -> str:
+    def __table_name__() -> str:
         return "order_items"
 
 
@@ -27,5 +27,5 @@ class Order(BaseModel):
     status: OrderStatus
     user_id: UUID | None = None
 
-    def __table_name__(cls) -> str:
+    def __table_name__() -> str:
         return "orders"

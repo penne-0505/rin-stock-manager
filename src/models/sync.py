@@ -12,5 +12,5 @@ class SyncRecord(BaseModel):
     timestamp: datetime
     user_id: UUID
 
-    def __table_name__(cls) -> str:
+    def __table_name__() -> str:
         return "sync_records"
