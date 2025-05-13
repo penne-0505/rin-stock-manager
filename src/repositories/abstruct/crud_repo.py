@@ -265,22 +265,6 @@ class CrudRepository(ABC, Generic[T]):
         data = q.execute()
         return [self._model_from(d) for d in data]
 
-    async def bulk_get(self, ids: list[str]) -> list[T]:
-        """
-        複数のIDに基づいてエンティティを取得します。
-
-        Args:
-            ids: 取得するエンティティのIDのリスト。
-
-        Returns:
-            取得されたエンティティのリスト。
-        """
-        if not ids:
-            return []
-        q = self.client.table(self._table).select("*").in_("id", ids)
-        data = q.execute()
-        return [self._model_from(d) for d in data]
-
     async def bulk_update(
         self,
         rows: list[dict[str, Any]],
@@ -329,7 +313,7 @@ class CrudRepository(ABC, Generic[T]):
         """
         return self._model_cls.model_validate(raw)
 
-    def dump(self, entity: T) -> dict[str, Any]:
+    def _dump(self, entity: T) -> dict[str, Any]:
         """
         Pydanticモデルのインスタンスを辞書形式に変換します。
 
@@ -340,3 +324,12 @@ class CrudRepository(ABC, Generic[T]):
             辞書形式のデータ。
         """
         return entity.model_dump()
+
+    def _get_base_query(self) -> Any:
+        """
+        基本クエリを取得します。
+
+        Returns:
+            Supabaseクエリオブジェクト。
+        """
+        return self.client.table(self._table).select("*")
