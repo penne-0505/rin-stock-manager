@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 
 from models.inventory import InventoryItem
 from repositories.abstruct.crud_repo import CrudRepository
@@ -33,17 +34,17 @@ class InventoryItemRepository(CrudRepository[InventoryItem]):
         """
         return await self.list()
 
-    async def get_item_by_id(self, item_id: str) -> InventoryItem | None:
+    async def get_item_by_id(self, item_id: UUID) -> InventoryItem | None:
         """
         IDで在庫アイテムを取得します。
 
         Args:
-            item_id (str): アイテムのID。
+            item_id (UUID): アイテムのID。
 
         Returns:
             InventoryItem | None: 在庫アイテム、または見つからない場合はNone。
         """
-        return await self.read(item_id)
+        return await self.read(str(item_id))
 
     async def upsert_item(
         self, item: InventoryItem, *, returning: bool = True
@@ -60,14 +61,14 @@ class InventoryItemRepository(CrudRepository[InventoryItem]):
         """
         return await self.upsert(item, returning=returning)
 
-    async def delete_item(self, item_id: str) -> bool:
+    async def delete_item(self, item_id: UUID) -> bool:
         """
         在庫アイテムを削除します。
 
         Args:
-            item_id (str): 削除する在庫アイテムのID。
+            item_id (UUID): 削除する在庫アイテムのID。
 
         Returns:
             bool: 削除が成功した場合はTrue、失敗した場合はFalse。
         """
-        return await self.delete(item_id)
+        return await self.delete(str(item_id))

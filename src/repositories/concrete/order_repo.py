@@ -1,8 +1,6 @@
-from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from constants.order_status import OrderStatus
-from constants.timezone import DefaultTZ
 from models.order import Order, OrderItem
 from repositories.abstruct.crud_repo import CrudRepository
 from services.app_services.client_service import SupabaseClient
@@ -15,29 +13,18 @@ class OrderRepository(CrudRepository[Order]):
     async def get_orders_by_filter(self, query: Any) -> list[Order]:
         return await self.list(query)
 
-    async def get_by_id(self, order_id: str) -> Order | None:
-        return await self.read(order_id)
+    async def get_by_id(self, order_id: UUID) -> Order | None:
+        return await self.read(str(order_id))
 
-    async def complete_order(
-        self, order_id: str, *, returning: bool = True
-    ) -> Order | None:
-        now = datetime.now(DefaultTZ)
-        return await self.upsert(
-            order_id,
-            {
-                "status": OrderStatus.COMPLETED,
-                "completed_at": now,
-            },
-            returning=returning,
-        )
+    # complete_orderはOrderServiceに移動したため削除
 
     async def update_order_items(
-        self, order_id: str, items: list[OrderItem], *, returning: bool = True
+        self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
     ) -> Order | None:
-        return await self.upsert(order_id, {"items": items}, returning=returning)
+        return await self.upsert(str(order_id), {"items": items}, returning=returning)
 
-    async def delete_order(self, order_id: str) -> bool:
-        return await self.delete(order_id)
+    async def delete_order(self, order_id: UUID) -> bool:
+        return await self.delete(str(order_id))
 
 
 class OrderItemRepository(CrudRepository[OrderItem]):
