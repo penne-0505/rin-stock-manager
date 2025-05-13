@@ -43,7 +43,7 @@ class InventoryItemRepository(CrudRepository[InventoryItem]):
         Returns:
             InventoryItem | None: 在庫アイテム、または見つからない場合はNone。
         """
-        return await self.get(item_id)
+        return await self.read(item_id)
 
     async def upsert_item(
         self, item: InventoryItem, *, returning: bool = True

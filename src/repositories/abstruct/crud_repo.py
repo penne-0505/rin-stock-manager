@@ -76,7 +76,7 @@ class CrudRepository(ABC, Generic[T]):
                 raise ConflictError(f"Conflict error: {e}")
             raise RepositoryError(f"Repository error: {e}")
 
-    async def get(self, id_: str, *, for_update: bool = False) -> T | None:
+    async def read(self, id_: str, *, for_update: bool = False) -> T | None:
         """
         IDに基づいてエンティティを取得します。
 
@@ -288,10 +288,10 @@ class CrudRepository(ABC, Generic[T]):
         return [self._model_from(d) for d in data]
 
     # ---------- ロック ----------
-    async def get_for_update(self, id_: str) -> T | None:
+    async def read_for_update(self, id_: str) -> T | None:
         """
         IDに基づいてエンティティを取得し、行ロックをかけます。
-        これは `get` メソッドの `for_update=True` のショートカットです。
+        これは `read` メソッドの `for_update=True` のショートカットです。
 
         Args:
             id_: 取得するエンティティのID。
@@ -299,7 +299,7 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             取得されたエンティティ、または見つからない場合はNone。
         """
-        return await self.get(id_, for_update=True)
+        return await self.read(id_, for_update=True)
 
     def _model_from(self, raw: dict[str, Any]) -> T:
         """

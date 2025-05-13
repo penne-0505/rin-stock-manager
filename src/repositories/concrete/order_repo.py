@@ -16,7 +16,7 @@ class OrderRepository(CrudRepository[Order]):
         return await self.list(query)
 
     async def get_by_id(self, order_id: str) -> Order | None:
-        return await self.get(order_id)
+        return await self.read(order_id)
 
     async def complete_order(
         self, order_id: str, *, returning: bool = True
