@@ -311,7 +311,7 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             Pydanticモデルのインスタンス。
         """
-        return self._model_cls.model_validate(raw)
+        return self._model_cls.model_validate(raw, by_name=True)
 
     def _dump(self, entity: T) -> dict[str, Any]:
         """
