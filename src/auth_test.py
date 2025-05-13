@@ -1,7 +1,12 @@
+import flet as ft
 from flet import Column, ElevatedButton, Page, RouteChangeEvent, SnackBar, Text, app
 
+from repositories.concrete.inventory_item_repo import InventoryItemRepository
+from repositories.concrete.order_repo import OrderItemRepository, OrderRepository
+
 # services.auth_service からのインポートを変更
-from services.client_service import SupabaseClient
+from services.app_services.client_service import SupabaseClient
+from services.domain_services.order_service import OrderService
 
 # AuthService のインスタンスを作成
 auth_service = SupabaseClient()
@@ -26,7 +31,10 @@ async def handle_auth_callback(url: str, pg: Page):
         show_snackbar(pg, "Supabase clientが初期化されていません。")
         return
 
-    user, error_message = await auth_service.exchange_code_and_get_user(url)
+    try:
+        user, error_message = await auth_service.exchange_code_and_get_user(url)
+    except Exception:
+        pass
 
     if error_message:
         show_snackbar(pg, error_message)
@@ -36,13 +44,30 @@ async def handle_auth_callback(url: str, pg: Page):
     if user and hasattr(user, "email"):
         pg.controls.append(Text(f"ログイン成功！こんにちは {user.email}"))
 
-        inventory_data = await auth_service.get_inventory_data()
-        if inventory_data is None:  # データ取得失敗の場合
-            pg.controls.append(Text("在庫データの取得に失敗しました。"))
-        elif not inventory_data:  # データが空の場合
-            pg.controls.append(Text("あなたの在庫データはありませんでした。"))
+        inventory_repo = InventoryItemRepository(auth_service.supabase_client)
+        order_repo = OrderRepository(auth_service.supabase_client)
+        order_item_repo = OrderItemRepository(auth_service.supabase_client)
+
+        order_service = OrderService(
+            order_repo=order_repo,
+            order_item_repo=order_item_repo,
+            inv_item_repo=inventory_repo,
+        )
+
+        orders = await order_service.get_order_by_filter()  # フィルタ無しで、全件取得
+        if orders is None:  # データ取得失敗の場合
+            pg.controls.append(Text("注文データの取得に失敗しました。"))
+        elif not orders:  # データが空の場合
+            pg.controls.append(Text("あなたの注文データはありませんでした。"))
         else:
-            pg.controls.append(Text(f"在庫件数: {len(inventory_data)} 件"))
+            for order in orders:
+                pg.controls.append(Text(f"注文ID: {order.id}"))
+                for item in order.items:
+                    pg.controls.append(
+                        Text(
+                            f"アイテムID: {item.inventory_item_id}, 数量: {item.quantity}"
+                        )
+                    )
     else:
         pg.controls.append(
             Text("ログインに失敗しました。ユーザー情報を取得できませんでした。")
@@ -60,7 +85,8 @@ def show_snackbar(pg: Page, message: str):
 
 def main(pg: Page):
     pg.title = "Supabase Auth Demo"
-    pg.vertical_alignment = "center"
+    pg.vertical_alignment = ft.MainAxisAlignment.CENTER
+    pg.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     async def route_change(e: RouteChangeEvent):
         if e.route.startswith("/auth/callback"):
@@ -82,8 +108,8 @@ def main(pg: Page):
                             ),
                         ),
                     ],
-                    horizontal_alignment="center",
-                    alignment="center",
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
                 )
             )
             try:
