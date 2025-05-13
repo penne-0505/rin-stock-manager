@@ -16,8 +16,6 @@ class OrderRepository(CrudRepository[Order]):
     async def get_by_id(self, order_id: UUID) -> Order | None:
         return await self.read(str(order_id))
 
-    # complete_orderはOrderServiceに移動したため削除
-
     async def update_order_items(
         self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
     ) -> Order | None:
@@ -30,3 +28,14 @@ class OrderRepository(CrudRepository[Order]):
 class OrderItemRepository(CrudRepository[OrderItem]):
     def __init__(self, client: SupabaseClient) -> None:
         super().__init__(client, OrderItem.__table_name__(), OrderItem)
+
+    async def get_order_items_by_order_id(
+        self, order_id: UUID
+    ) -> list[OrderItem] | None:
+        query = self.client.table(self._table).select("*").eq("order_id", str(order_id))
+        return await self.list(query)
+
+    async def update_order_items(
+        self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
+    ) -> Order | None:
+        return await self.upsert(str(order_id), {"items": items}, returning=returning)
