@@ -1,6 +1,9 @@
+from datetime import datetime
 from decimal import Decimal
+from uuid import UUID
 
 from constants.order_status import OrderStatus
+from constants.timezone import DefaultTZ
 from models.order import Order, OrderItem
 from repositories.concrete.inventory_item_repo import InventoryItemRepository
 from repositories.concrete.order_repo import OrderItemRepository, OrderRepository
@@ -59,23 +62,34 @@ class OrderService:
         Orderのitemsを更新、totalを再計算、各InventoryItemに対してInventoryTransactionを作成、Orderをreturn
         """
 
-        # 1. 関係していた、Order、InventoryItemを取得
-        order = await self.order_repo.get_by_id(order_id)
-        base_query = self.order_item_repo._get_base_query()
-        order_item_query = QueryFilterUtils().filter_eq(
-            base_query, "order_id", order_id
+        # !リポジトリアクセスにawaitを使用していないのは、Supabaseのクライアントが非同期であるため
+
+        # order_idを元にOrderItemsを取得
+        related_order_items = await self.order_item_repo.get_order_items_by_order_id(
+            UUID(order_id)
         )
-        order_items = await self.order_item_repo.list(order_item_query)
 
-        if not order:
-            raise ValueError("注文が見つかりません")
-        if not inventory_items:
-            raise ValueError("在庫アイテムが見つかりません")
+        # InventoryItemのIDを取得
+        inv_item_ids = [item.inventory_item_id for item in related_order_items]
+        # InventoryItemのIDを元にInventoryItemを取得するためのクエリ作成
+        base_query = self.inv_item_repo._get_base_query()
+        item_ids_query = QueryFilterUtils().filter_in(base_query, "id", inv_item_ids)
+        # InventoryItemのIDを元にInventoryItemを取得
+        related_inventory_items = self.inv_item_repo.list(item_ids_query)
 
-        # 2. Orderのitemsを更新(itemsを新しいものに置き換え)
-        order.items = items
+        # InventoryItemのstockを更新
+        for item in related_inventory_items:
+            order_item = next(
+                (oi for oi in related_order_items if oi.inventory_item_id == item.id),
+                None,
+            )
+            if order_item:
+                item.stock -= order_item.quantity
 
-        # 3. 取得したInventoryItemのstockを、OrderItemのquantity分だけ増減させて保持しておく
+        # Orderのitemsを更新
+        self.order_item_repo.update_order_items(
+            UUID(order_id), related_order_items, returning=False
+        )
 
         return
 
@@ -89,7 +103,9 @@ class OrderService:
         item_ids = [item.inventory_item_id for item in items]
 
         # inventory_item_idを元に、inventory_itemsを取得
-        inventory_items = await self.inv_item_repo.bulk_get(item_ids)
+        base_query = self.inv_item_repo._get_base_query()
+        item_query = QueryFilterUtils().filter_in(base_query, "id", item_ids)
+        inventory_items = await self.inv_item_repo.list(item_query)
 
         # inventory_itemsとitemsをzipして、合計金額を計算
         total: Decimal = sum(
@@ -97,3 +113,20 @@ class OrderService:
             for item, order_item in zip(inventory_items, items)
         )
         return total
+
+    async def complete_order(
+        self, order_id: str, *, returning: bool = True
+    ) -> Order | None:
+        """
+        指定した注文を完了状態にし、completed_atを現在時刻で更新する
+        """
+
+        now = datetime.now(DefaultTZ)
+        return await self.order_repo.upsert(
+            order_id,
+            {
+                "status": OrderStatus.COMPLETED,
+                "completed_at": now,
+            },
+            returning=returning,
+        )
