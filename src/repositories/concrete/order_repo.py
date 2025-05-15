@@ -4,6 +4,7 @@ from uuid import UUID
 from models.order import Order, OrderItem
 from repositories.abstruct.crud_repo import CrudRepository
 from services.app_services.client_service import SupabaseClient
+from utils.query_utils import QueryFilterUtils
 
 
 class OrderRepository(CrudRepository[Order]):
@@ -19,7 +20,10 @@ class OrderRepository(CrudRepository[Order]):
     async def update_order_items(
         self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
     ) -> Order | None:
-        return await self.upsert(str(order_id), {"items": items}, returning=returning)
+        dumped_items = [self._dump(item) for item in items]
+        return await self.update(
+            str(order_id), {"items": dumped_items}, returning=returning
+        )
 
     async def delete_order(self, order_id: UUID) -> bool:
         return await self.delete(str(order_id))
@@ -32,10 +36,15 @@ class OrderItemRepository(CrudRepository[OrderItem]):
     async def get_order_items_by_order_id(
         self, order_id: UUID
     ) -> list[OrderItem] | None:
-        query = self.client.table(self._table).select("*").eq("order_id", str(order_id))
+        query = QueryFilterUtils().filter_equal(
+            self._base_query, "order_id", str(order_id)
+        )
         return await self.list(query)
 
     async def update_order_items(
         self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
     ) -> Order | None:
-        return await self.upsert(str(order_id), {"items": items}, returning=returning)
+        dumped_items = [self._dump(item) for item in items]
+        return await self.update(
+            str(order_id), {"items": dumped_items}, returning=returning
+        )
