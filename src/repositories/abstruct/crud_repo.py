@@ -48,6 +48,8 @@ class CrudRepository(ABC, Generic[T]):
         self._table = table
         self._model_cls = model_cls
 
+        self._base_query = self._get_base_query()
+
     # ---------- 基本 CRUD ----------
     async def create(self, entity: T, *, returning: bool = True) -> T | None:
         """
@@ -65,10 +67,15 @@ class CrudRepository(ABC, Generic[T]):
             RepositoryError: その他のリポジトリエラー。
         """
         try:
-            q = self.client.table(self._table).insert(entity.model_dump())
+            # エンティティを挿入
+            q = self.client.table(self._table).insert(self._dump(entity))
+
+            # returningがTrueの場合、挿入されたデータを取得
             if returning:
                 data = await q.single()
-                return entity.__class__.model_validate(data)
+                return self._model_from(data)
+
+            # returningがFalseの場合、挿入を実行
             q.execute()
             return None
         except Exception as e:
@@ -92,9 +99,14 @@ class CrudRepository(ABC, Generic[T]):
             RepositoryError: その他のリポジトリエラー。
         """
         try:
+            # IDに基づいてエンティティを取得
             q = self.client.table(self._table).select("*", count="exact").eq("id", id_)
+
+            # for_updateがTrueの場合、行ロックを取得
             if for_update:
                 q = q.filter("", "for_update")  # ←PostgREST拡張SQL
+
+            # クエリを実行してデータを取得
             data = await q.single()
             return None if data is None else self._model_from(data)
         except Exception as e:
@@ -102,16 +114,19 @@ class CrudRepository(ABC, Generic[T]):
                 raise NotFoundError(f"Record with id {id_} not found.")
             raise RepositoryError(f"Repository error: {e}")
 
-    async def update(self, id_: str, patch: dict[str, Any]) -> T:
+    async def update(
+        self, id_: str, patch: dict[str, Any], returning: bool = True
+    ) -> T | None:
         """
         IDに基づいてエンティティを更新します。
 
         Args:
             id_: 更新するエンティティのID。
             patch: 更新するデータを含む辞書。
+            returning: 更新されたエンティティを返すかどうか。デフォルトはTrue。
 
         Returns:
-            更新されたエンティティ。
+            更新されたエンティティ、returningがFalseの場合はNone。
 
         Raises:
             RecordNotFoundError: 指定されたIDのレコードが見つからない場合。
@@ -119,11 +134,17 @@ class CrudRepository(ABC, Generic[T]):
             RepositoryError: その他のリポジトリエラー。
         """
         try:
+            # 更新するデータを辞書形式で取得
             data = await (
                 self.client.table(self._table).update(patch).eq("id", id_).single()
             )
+
             if not data:
                 raise RecordNotFoundError(f"Record with id {id_} not found.")
+            if not returning:
+                return None
+
+            # 取得したデータをモデルに変換して返す
             return self._model_from(data)
         except Exception as e:
             if isinstance(e, NotFoundError):
@@ -142,6 +163,7 @@ class CrudRepository(ABC, Generic[T]):
             RepositoryError: その他のリポジトリエラー。
         """
         try:
+            # IDに基づいてエンティティを削除
             await self.client.table(self._table).delete().eq("id", id_).execute()
         except Exception as e:
             if isinstance(e, NotFoundError):
@@ -164,11 +186,13 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             取得されたエンティティのリスト。
         """
+        # クエリを実行してデータを取得
         q = self.client.table(self._table).select("*")
         if query:
             q = q.text(query)
         data = q.execute()
-        return [self._model_from(d) for d in data]
+        result = [self._model_from(d) for d in data]
+        return result
 
     async def init_query(self) -> Any:
         """
@@ -190,6 +214,7 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             一致するエンティティの数。
         """
+        # クエリを実行してカウントを取得
         q = query.select("id", count="exact")
         return q.execute()
 
@@ -203,32 +228,10 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             エンティティが存在する場合はTrue、そうでない場合はFalse。
         """
+        # クエリを実行して存在を確認
         return (await self.count(query=query)) > 0
 
     # ---------- Supabase/PostgREST 特化 ----------
-    async def upsert(
-        self,
-        entity: T,
-        *,
-        on_conflict: str | list[str] = "id",
-        returning: bool = True,
-    ) -> T | None:
-        """
-        エンティティを挿入または更新 (upsert) します。
-
-        Args:
-            entity: 挿入または更新するエンティティ。
-            on_conflict: 競合が発生した場合の処理方法を指定するカラム名またはカラム名のリスト。デフォルトは "id"。
-            returning: 操作されたエンティティを返すかどうか。デフォルトはTrue。
-
-        Returns:
-            操作されたエンティティ、またはreturningがFalseの場合はNone。
-        """
-        q = self.client.table(self._table).upsert(
-            entity.model_dump(), on_conflict=on_conflict
-        )
-        data = await (q.single() if returning else q.execute())
-        return None if data is None else self._model_from(data)
 
     async def rpc(self, func_name: str, params: dict[str, Any]) -> Any:
         """
@@ -241,6 +244,7 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             RPC呼び出しの結果。
         """
+        # SupabaseのRPCを実行
         return await self.client.rpc(func_name, params).execute()
 
     # ---------- バルク ----------
@@ -257,13 +261,18 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             挿入されたエンティティのリスト。
         """
+        # エンティティを辞書形式に変換
+        dumped_entities = [self._dump(e) for e in entities]
+
+        # Supabaseのテーブルに挿入
         if not entities:
             return []
         q = self.client.table(self._table).insert(
-            [e.model_dump() for e in entities], ignore_duplicates=ignore_conflict
+            dumped_entities, ignore_duplicates=ignore_conflict
         )
         data = q.execute()
-        return [self._model_from(d) for d in data]
+        result = [self._model_from(d) for d in data]
+        return result
 
     async def bulk_update(
         self,
@@ -283,9 +292,44 @@ class CrudRepository(ABC, Generic[T]):
         """
         if not rows:
             return []
+
+        # 行を更新または挿入
         q = self.client.table(self._table).upsert(rows, on_conflict=key)
         data = q.execute()
-        return [self._model_from(d) for d in data]
+        result = [self._model_from(d) for d in data]
+        return result
+
+    async def upsert(
+        self, entity: T, *, on_conflict: str = "id", returning: bool = True
+    ) -> T | None:
+        """
+        現在のモデルが対象のテーブルに、レコードを挿入または更新 (upsert) します。
+
+        Args:
+            entity: 挿入または更新するエンティティ。
+            on_conflict: 競合解決のキーとなるカラム名。デフォルトは "id"。
+            returning: 処理後のエンティティを返すかどうか。デフォルトはTrue。
+
+        Returns:
+            挿入または更新されたエンティティ、またはreturning=Falseの場合はNone。
+
+        Raises:
+            RepositoryError: リポジトリエラー。
+        """
+        try:
+            # エンティティを辞書形式に変換
+            q = self.client.table(self._table).upsert(
+                self._dump(entity), on_conflict=on_conflict
+            )
+
+            # returningがTrueの場合、挿入または更新されたデータを返す
+            if returning:
+                data = await q.single()
+                return self._model_from(data)
+            await q.execute()
+            return None
+        except Exception as e:
+            raise RepositoryError(f"Repository error: {e}")
 
     # ---------- ロック ----------
     async def read_for_update(self, id_: str) -> T | None:
@@ -323,7 +367,7 @@ class CrudRepository(ABC, Generic[T]):
         Returns:
             辞書形式のデータ。
         """
-        return entity.model_dump()
+        return entity.model_dump(by_alias=True)
 
     def _get_base_query(self) -> Any:
         """
