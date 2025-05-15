@@ -171,10 +171,10 @@ class CrudRepository(ABC, Generic[T]):
             raise RepositoryError(f"Repository error: {e}")
 
     # ---------- クエリユーティリティ ----------
-    async def list(
+    async def list_entities(
         self,
         *,
-        query: Any | None = None,
+        query: Any,
     ) -> list[T]:
         """
         クエリを使用してエンティティのリストを取得します。
@@ -187,24 +187,11 @@ class CrudRepository(ABC, Generic[T]):
             取得されたエンティティのリスト。
         """
         # クエリを実行してデータを取得
-        q = self.client.table(self._table).select("*")
-        if query:
-            q = q.text(query)
-        data = q.execute()
+        data = query.execute()
         result = [self._model_from(d) for d in data]
         return result
 
-    async def init_query(self) -> Any:
-        """
-        初期クエリを取得します。
-
-        Returns:
-            初期クエリオブジェクト。
-        """
-        # クエリ用のオブジェクトを返す
-        return self.client.table(self._table).select("*")
-
-    async def count(self, *, query: Any | None = None) -> int:
+    async def count(self, *, query: Any) -> int:
         """
         指定されたクエリに一致するエンティティの数をカウントします。
 
@@ -218,7 +205,7 @@ class CrudRepository(ABC, Generic[T]):
         q = query.select("id", count="exact")
         return q.execute()
 
-    async def exists(self, *, query: Any | None = None) -> bool:
+    async def exists(self, *, query: Any) -> bool:
         """
         指定されたクエリに一致するエンティティが存在するかどうかを確認します。
 
@@ -298,6 +285,25 @@ class CrudRepository(ABC, Generic[T]):
         data = q.execute()
         result = [self._model_from(d) for d in data]
         return result
+
+    async def bulk_delete(self, ids: list[str]) -> None:
+        """
+        複数のエンティティを一括で削除します。
+
+        Args:
+            ids: 削除するエンティティのIDのリスト。
+
+        Raises:
+            RepositoryError: リポジトリエラー。
+        """
+        if not ids:
+            return
+
+        # IDに基づいてエンティティを削除
+        try:
+            await self.client.table(self._table).delete().in_("id", ids).execute()
+        except Exception as e:
+            raise RepositoryError(f"Repository error: {e}")
 
     async def upsert(
         self, entity: T, *, on_conflict: str = "id", returning: bool = True
