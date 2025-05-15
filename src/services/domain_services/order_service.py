@@ -4,11 +4,9 @@ from uuid import UUID
 
 from constants.order_status import OrderStatus
 from constants.timezone import DefaultTZ
-from constants.transaction_mode import TransactionMode
 from models.order import Order, OrderItem
 from repositories.concrete.inventory_item_repo import InventoryItemRepository
 from repositories.concrete.order_repo import OrderItemRepository, OrderRepository
-from repositories.concrete.transaction_repo import InventoryTransactionRepository
 from utils.query_utils import QueryFilterUtils
 
 
@@ -18,12 +16,10 @@ class OrderService:
         order_repo: OrderRepository,
         order_item_repo: OrderItemRepository,
         inv_item_repo: InventoryItemRepository,
-        inv_transaction_repo: InventoryTransactionRepository,
     ) -> None:
         self.order_repo = order_repo
         self.order_item_repo = order_item_repo
         self.inv_item_repo = inv_item_repo
-        self.inv_transaction_repo = inv_transaction_repo
 
     async def create_order(
         self,
@@ -69,7 +65,9 @@ class OrderService:
         # !リポジトリアクセスにawaitを使用していないのは、Supabaseのクライアントが非同期であるため
 
         # order_idを元にOrderItemsを取得
-        related_order_items = items
+        related_order_items = await self.order_item_repo.get_order_items_by_order_id(
+            UUID(order_id)
+        )
 
         # InventoryItemのIDを取得
         inv_item_ids = [item.inventory_item_id for item in related_order_items]
@@ -77,16 +75,7 @@ class OrderService:
         base_query = self.inv_item_repo._get_base_query()
         item_ids_query = QueryFilterUtils().filter_in(base_query, "id", inv_item_ids)
         # InventoryItemのIDを元にInventoryItemを取得
-        related_inventory_items = self.inv_item_repo.list_entities(item_ids_query)
-
-        # 関連するInventoryTransactionを取得
-        # TODO: 関連トランザクション取得 -> 関連するトランザクションを削除 -> InventoryItem,OrderItemの更新終了後にTransactionを作成 -> Order返却
-        related_inv_transactions = self.inv_transaction_repo.get_by_item_ids(
-            inv_item_ids
-        )
-        transaction_ids = [transaction.id for transaction in related_inv_transactions]
-        # 関連するInventoryTransactionを削除
-        self.inv_transaction_repo.bulk_delete(transaction_ids)
+        related_inventory_items = self.inv_item_repo.list(item_ids_query)
 
         # InventoryItemのstockを更新
         for item in related_inventory_items:
@@ -98,30 +87,9 @@ class OrderService:
                 item.stock -= order_item.quantity
 
         # Orderのitemsを更新
-        updated_order = self.order_item_repo.update_order_items(
-            UUID(order_id), related_order_items, returning=True
+        self.order_item_repo.update_order_items(
+            UUID(order_id), related_order_items, returning=False
         )
-
-        updated_order_items = [order.items for order in updated_order]
-
-        # Orderのtotalを再計算
-        order_total = self.calculate_total(updated_order_items)
-
-        # 各InventoryItemに対してInventoryTransactionを作成
-        for item in related_inventory_items:
-            order_item = next(
-                (oi for oi in related_order_items if oi.inventory_item_id == item.id),
-                None,
-            )
-            if order_item:
-                transaction = {
-                    "item_id": item.id,
-                    "change": -order_item.quantity,
-                    "type": TransactionMode.SALE,
-                }
-                self.inv_transaction_repo.create(transaction)
-
-        # TODO: ちょっといろいろおかしい。orderをupdateするのにあたって、「何をするべきか」再考して実装しなおす。
 
         return
 
@@ -135,9 +103,9 @@ class OrderService:
         item_ids = [item.inventory_item_id for item in items]
 
         # inventory_item_idを元に、inventory_itemsを取得
-        base_query = self.inv_item_repo.self._base_query()
+        base_query = self.inv_item_repo._get_base_query()
         item_query = QueryFilterUtils().filter_in(base_query, "id", item_ids)
-        inventory_items = await self.inv_item_repo.list_entities(item_query)
+        inventory_items = await self.inv_item_repo.list(item_query)
 
         # inventory_itemsとitemsをzipして、合計金額を計算
         total: Decimal = sum(
