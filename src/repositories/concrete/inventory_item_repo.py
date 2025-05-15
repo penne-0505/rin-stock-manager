@@ -32,7 +32,7 @@ class InventoryItemRepository(CrudRepository[InventoryItem]):
         Returns:
             list[InventoryItem]: 在庫アイテムのリスト。
         """
-        return await self.list()
+        return await self.list_entities()
 
     async def get_item_by_id(self, item_id: UUID) -> InventoryItem | None:
         """

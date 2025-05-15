@@ -12,7 +12,7 @@ class OrderRepository(CrudRepository[Order]):
         super().__init__(client, Order.__table_name__(), Order)
 
     async def get_orders_by_filter(self, query: Any) -> list[Order]:
-        return await self.list(query)
+        return await self.list_entities(query)
 
     async def get_by_id(self, order_id: UUID) -> Order | None:
         return await self.read(str(order_id))
@@ -39,7 +39,7 @@ class OrderItemRepository(CrudRepository[OrderItem]):
         query = QueryFilterUtils().filter_equal(
             self._base_query, "order_id", str(order_id)
         )
-        return await self.list(query)
+        return await self.list_entities(query)
 
     async def update_order_items(
         self, order_id: UUID, items: list[OrderItem], *, returning: bool = True
