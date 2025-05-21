@@ -1,4 +1,4 @@
-from urllib.parse import parse_qs, urlparse  # parse_qs をインポート
+from urllib.parse import parse_qs, urlparse
 
 
 def get_param_value(url: str, param_name: str) -> str | None:
