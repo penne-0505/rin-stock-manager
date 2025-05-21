@@ -49,14 +49,12 @@ class SupabaseClient:
         """redirect URI に戻ったときの処理: トークンをセット→ユーザー情報取得"""
         if not self.supabase_client:
             # Supabase クライアントが初期化されていない場合
-            print("Supabaseのクライアントが初期化されていません。")
             return None
 
         code = get_param_value(url, "code")
 
         if not code:
             # URL に code パラメータがない場合
-            print("URLにcodeパラメータがありません。")
             return None
 
         try:
@@ -66,12 +64,10 @@ class SupabaseClient:
 
             if not exchange_response or not exchange_response.session:
                 # トークン交換失敗
-                print("トークン交換に失敗しました。")
                 return None
 
-        except Exception as e:
+        except Exception:
             # トークン交換中のエラー
-            print(f"トークン交換中にエラーが発生しました。{e}")
             return None
 
         try:
@@ -80,9 +76,7 @@ class SupabaseClient:
                 return user_response.user, None
             else:
                 # ユーザー情報取得失敗
-                print("ユーザー情報の取得に失敗しました。")
                 return None
-        except Exception as e:
+        except Exception:
             # ユーザー情報取得中のエラー
-            print(f"ユーザー情報取得中にエラーが発生しました。{e}")
             return None
