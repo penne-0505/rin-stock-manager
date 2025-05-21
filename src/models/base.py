@@ -4,6 +4,6 @@ from pydantic import BaseModel
 
 
 class CoreBaseModel(BaseModel, ABC):
+    @classmethod
     @abstractmethod
-    def __table_name__(self) -> str:
-        pass
+    def __table_name__(cls) -> str: ...
