@@ -1,7 +1,7 @@
 from supabase import AsyncClient, create_client
 
 from utils.config import settings
-from utils.utils import get_param_value
+from utils.url_parser import get_param_value
 
 
 class SupabaseClient:
