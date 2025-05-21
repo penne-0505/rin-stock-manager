@@ -52,7 +52,7 @@ class CrudRepository(ABC, Generic[T, ID]):
         if limit <= 0:
             raise ValueError("limit must be greater than 0")
 
-        base_query = self.table.select("*").range(offset, limit + offset - 1)
+        base_query = self.table.select("*").range(offset, offset + limit - 1)
 
         # もしフィルタが指定されていたら、クエリに追加
         if filters:
