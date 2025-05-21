@@ -2,12 +2,11 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from constants.transaction_mode import TransactionMode
+from models.base import CoreBaseModel
 
 
-class InventoryItem(BaseModel):
+class InventoryItem(CoreBaseModel):
     id: UUID | None = None
     name: str
     price: Decimal
@@ -16,11 +15,11 @@ class InventoryItem(BaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__() -> str:
+    def __table_name__(self) -> str:
         return "inventory_items"
 
 
-class InventoryTransaction(BaseModel):
+class InventoryTransaction(CoreBaseModel):
     id: UUID | None = None
     item_id: UUID
     change: int  # 正の値は入庫、負の値は売上(出庫)。個数。
@@ -29,5 +28,5 @@ class InventoryTransaction(BaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__() -> str:
+    def __table_name__(self) -> str:
         return "inventory_transactions"
