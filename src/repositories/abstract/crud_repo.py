@@ -36,10 +36,7 @@ class CrudRepository(ABC, Generic[T, ID]):
 
     async def list(self, *, limit: int = 100, offset: int = 0) -> list[T]:
         if limit <= 0:
-            # ここでエラーを投げるかは要検討
             raise ValueError("limit must be greater than 0")
-        elif limit < 0:
-            raise ValueError("limit must be positive")
 
         rows = await self.table.select("*").range(offset, offset + limit - 1).execute()
 
