@@ -10,8 +10,8 @@ class Op(Enum):
     LTE = auto()
     LIKE = auto()
     ILIKE = auto()
-    IS_ = auto()
-    IN_ = auto()
+    IS = auto()
+    IN = auto()
     CONTAINS = auto()
     CONTAINED_BY = auto()
     RANGE_GT = auto()
@@ -30,8 +30,8 @@ OP_TO_STR = {
     Op.LTE: "lte",
     Op.LIKE: "like",
     Op.ILIKE: "ilike",
-    Op.IS_: "is_",
-    Op.IN_: "in_",
+    Op.IS: "is_",
+    Op.IN: "in_",
     Op.CONTAINS: "contains",
     Op.CONTAINED_BY: "contained_by",
     Op.RANGE_GT: "range_gt",
