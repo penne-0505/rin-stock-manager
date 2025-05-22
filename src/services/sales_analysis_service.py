@@ -7,6 +7,7 @@ class SalesReport:
 
 
 class SalesAnalysisService:
+    # このgroup_byがあいまいなので、実装時には詰める
     def get_sales_report(
         self, start_date: datetime, end_date: datetime, group_by: str | None = None
     ) -> SalesReport:
@@ -17,6 +18,7 @@ class SalesAnalysisService:
     ) -> list:
         """売上上位の商品を取得する"""
 
+    # ここも同様甘いので、実装時に詰める
     def get_sales_trends(
         self,
         period: str = "daily",
