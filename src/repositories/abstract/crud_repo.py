@@ -30,7 +30,6 @@ class CrudRepository(ABC, Generic[T, ID]):
     # internal helpers (private)
     # ---------------------------------------------------------------------
     def _normalize_key(self, key: ID | PKMap) -> PKMap:
-        """単一キー値 or キーマッピング → 正規化マッピング"""
         if isinstance(key, Mapping):
             return key
         # 単一値の場合、pk_cols は 1 列であるはず
@@ -41,7 +40,6 @@ class CrudRepository(ABC, Generic[T, ID]):
         return {self.pk_cols[0]: key}
 
     def _apply_pk(self, query: Any, key: PKMap):
-        """PK 条件をクエリビルダに付与"""
         for col in self.pk_cols:
             try:
                 query = query.eq(col, key[col])
