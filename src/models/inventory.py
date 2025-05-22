@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from uuid import UUID
 
 from constants.transaction_mode import TransactionMode
@@ -9,10 +8,11 @@ from models.base import CoreBaseModel
 class InventoryItem(CoreBaseModel):
     id: UUID | None = None
     name: str
-    price: Decimal
+    price: int
     stock: int
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    alert_threshold: int | None = 50  # 在庫数がこの値を下回ったらアラート
     user_id: UUID | None = None
 
     def __table_name__(self) -> str:
