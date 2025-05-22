@@ -22,8 +22,8 @@ class InventoryItem(CoreBaseModel):
 class InventoryTransaction(CoreBaseModel):
     id: UUID | None = None
     item_id: UUID
-    change: int  # 正の値は入庫、負の値は売上(出庫)。個数。
-    type: TransactionMode
+    change_amount: int  # 正の値は入庫、負の値は売上(出庫)。個数。
+    tx_type: TransactionMode
     created_at: datetime | None = None
     updated_at: datetime | None = None
     user_id: UUID | None = None

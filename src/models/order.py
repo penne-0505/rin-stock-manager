@@ -17,8 +17,8 @@ class Order(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
     # 割引率である場合は、ロジック側で計算する
-    discount_amount: int | None = 0
-    payment_method: str | None = None
+    discount_amount: int = 0
+    payment_method: str
 
     def __table_name__(self) -> str:
         return "orders"
