@@ -1,6 +1,6 @@
 from typing import Any
 
-from constants.filter_op import OP_TO_STR, Op
+from constants.options import OP_TO_STR, FilterOp
 from constants.types import Filter
 
 
@@ -15,8 +15,8 @@ def apply_filters_to_query(query: Any, filters: Filter) -> Any:
         if method is None:
             raise AttributeError(f"Supabase query has no method {method_name}")
 
-        if op == Op.IN_ and isinstance(value, (list, tuple, set)):
+        if op == FilterOp.IN and isinstance(value, (list, tuple, set)):
             value = list(value)
 
-        query = method(col, value if op != Op.IS_ else "null")
+        query = method(col, value if op != FilterOp.IS else "null")
     return query
