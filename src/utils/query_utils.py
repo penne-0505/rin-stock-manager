@@ -20,3 +20,10 @@ def apply_filters_to_query(query: Any, filters: Filter) -> Any:
 
         query = method(col, value if op != FilterOp.IS else "null")
     return query
+
+
+def apply_order_by_to_query(query: Any, order_by: str, descending: bool = False) -> Any:
+    """Supabase クエリに order_by を適用。order_by は単一のrowを指定することを想定"""
+    if descending:
+        return query.order(order_by, desc=True)
+    return query.order(order_by, asc=True)

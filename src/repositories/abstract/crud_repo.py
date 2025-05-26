@@ -4,10 +4,10 @@ from abc import ABC
 from collections.abc import Mapping, Sequence
 from typing import Any, Generic, TypeVar, overload
 
-from constants.types import Filter, PKMap
-from services.client_service import SupabaseClient
-from src.models.base import CoreBaseModel
-from utils.query_utils import apply_filters_to_query
+from constants.types import Filter, OrderBy, PKMap
+from models._base import CoreBaseModel
+from services.platform.client_service import SupabaseClient
+from utils.query_utils import apply_filters_to_query, apply_order_by_to_query
 
 T = TypeVar("T", bound=CoreBaseModel)
 ID = TypeVar("ID")  # 単一主キー値の型（int, str など）
@@ -122,6 +122,7 @@ class CrudRepository(ABC, Generic[T, ID]):
     async def find(
         self,
         filters: Filter | None = None,
+        order_by: OrderBy | None = None,
         *,
         limit: int = 100,
         offset: int = 0,
@@ -131,6 +132,8 @@ class CrudRepository(ABC, Generic[T, ID]):
         query = self.table.select("*").range(offset, offset + limit - 1)
         if filters:
             query = apply_filters_to_query(query, filters)
+        if order_by:
+            query = apply_order_by_to_query(query, order_by)
         rows = await query.execute()
         return (
             [self.model_cls.model_validate(r) for r in rows.data] if rows.data else []
