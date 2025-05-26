@@ -1,9 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from models.base import CoreBaseModel
+from models._base import CoreBaseModel
 
 
+# 未使用、オフライン対応用
 class SyncRecord(CoreBaseModel):
     id: UUID | None = None
     record_type: str  # 対象テーブル名
