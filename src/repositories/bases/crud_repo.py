@@ -9,15 +9,15 @@ from models._base import CoreBaseModel
 from services.platform.client_service import SupabaseClient
 from utils.query_utils import apply_filters_to_query, apply_order_by_to_query
 
-T = TypeVar("T", bound=CoreBaseModel)
+M = TypeVar("M", bound=CoreBaseModel)
 ID = TypeVar("ID")  # 単一主キー値の型（int, str など）
 
 
-class CrudRepository(ABC, Generic[T, ID]):
+class CrudRepository(ABC, Generic[M, ID]):
     def __init__(
         self,
         client: SupabaseClient,
-        model_cls: type[T],
+        model_cls: type[M],
         *,
         pk_cols: Sequence[str] | None = None,  # 複合 PK 対応
     ) -> None:
@@ -54,18 +54,18 @@ class CrudRepository(ABC, Generic[T, ID]):
     # ------------------------------------------------------------------
 
     # -------- create ---------------------------------------------------
-    async def create(self, entity: T) -> T | None:
+    async def create(self, entity: M) -> M | None:
         dumped_entity = entity.model_dump()
         result = await self.table.insert(dumped_entity).execute()
         return self.model_cls.model_validate(result.data[0]) if result.data else None
 
     # -------- get ------------------------------------------------------
     @overload
-    async def get(self, key: ID) -> T | None:  # 単一キー糖衣
+    async def get(self, key: ID) -> M | None:  # 単一キー糖衣
         ...
 
     @overload
-    async def get(self, key: PKMap) -> T | None:  # 複合キー
+    async def get(self, key: PKMap) -> M | None:  # 複合キー
         ...
 
     async def get(self, key):  # type: ignore[override]
@@ -75,10 +75,10 @@ class CrudRepository(ABC, Generic[T, ID]):
 
     # -------- update ---------------------------------------------------
     @overload
-    async def update(self, key: ID, patch: Mapping[str, Any]) -> T | None: ...
+    async def update(self, key: ID, patch: Mapping[str, Any]) -> M | None: ...
 
     @overload
-    async def update(self, key: PKMap, patch: Mapping[str, Any]) -> T | None: ...
+    async def update(self, key: PKMap, patch: Mapping[str, Any]) -> M | None: ...
 
     async def update(self, key, patch):  # type: ignore[override]
         pk = self._normalize_key(key)
@@ -111,7 +111,7 @@ class CrudRepository(ABC, Generic[T, ID]):
     # ------------------------------------------------------------------
     # listing & searching
     # ------------------------------------------------------------------
-    async def list(self, *, limit: int = 100, offset: int = 0) -> list[T]:
+    async def list(self, *, limit: int = 100, offset: int = 0) -> list[M]:
         if limit <= 0:
             raise ValueError("limit must be positive")
         rows = await self.table.select("*").range(offset, offset + limit - 1).execute()
@@ -126,7 +126,7 @@ class CrudRepository(ABC, Generic[T, ID]):
         *,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[T]:
+    ) -> list[M]:
         if limit <= 0:
             raise ValueError("limit must be positive")
         query = self.table.select("*").range(offset, offset + limit - 1)
