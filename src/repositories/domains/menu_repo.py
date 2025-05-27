@@ -39,19 +39,26 @@ class MenuItemRepository(CrudRepository[MenuItem, UUID]):
 
         return await self.find(filters=filters, order_by=order_by)
 
-    async def search_by_name(self, keyword: str, user_id: UUID) -> list[MenuItem]:
+    async def search_by_name(
+        self, keyword: str | list[str], user_id: UUID
+    ) -> list[MenuItem]:
         """名前でメニューアイテムを検索"""
 
-        if not keyword.strip():
+        # キーワードの正規化
+        if isinstance(keyword, str):
+            keywords = [keyword.strip()] if keyword.strip() else []
+        else:
+            keywords = [k.strip() for k in keyword if k.strip()]
+
+        if not keywords:
             return []
 
-        filters = {
-            "user_id": (FilterOp.EQ, user_id),
-            "name": (
-                FilterOp.ILIKE,
-                f"%{keyword.strip()}%",
-            ),  # 大文字小文字を区別しないあいまい検索
-        }
+        filters = {"user_id": (FilterOp.EQ, user_id)}
+
+        # 複数キーワードの場合はAND条件で検索
+        for i, kw in enumerate(keywords):
+            filter_key = f"name_{i}" if i > 0 else "name"
+            filters[filter_key] = (FilterOp.ILIKE, f"%{kw}%")
 
         order_by = ("display_order", False)  # 表示順でソート
 
