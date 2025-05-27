@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
+from constants.status import OrderStatus
 from models.analytics import DailyStatsResult
 from repositories.domains.analysis_repo import DailySummaryRepository
 from repositories.domains.order_repo import OrderItemRepository, OrderRepository
@@ -23,7 +24,6 @@ class AnalyticsService:
         self, target_date: datetime, user_id: UUID
     ) -> DailyStatsResult:
         """リアルタイム日次統計を取得"""
-        from constants.status import OrderStatus
 
         # 指定日の注文数を取得
         status_counts = await self.order_repo.count_by_status_and_date(
@@ -142,7 +142,6 @@ class AnalyticsService:
         self, date_from: datetime, date_to: datetime, user_id: UUID
     ) -> dict[str, Any]:
         """期間指定売上を計算"""
-        from constants.status import OrderStatus
 
         # 期間内の完了注文を取得
         orders = await self.order_repo.find_by_date_range(date_from, date_to, user_id)
