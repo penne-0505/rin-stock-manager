@@ -1,85 +1,73 @@
 from uuid import UUID
+from models.inventory import Material, MaterialCategory, Recipe
+from decimal import Decimal
 
-from models.inventory import InventoryItem, InventoryTransaction
-from services.client_service import SupabaseClient
-from src.repositories.abstract.crud_repo import CrudRepository
-
-
-class InvItemRepository(CrudRepository[InventoryItem, UUID]):
-    def __init__(self, client: SupabaseClient):
-        super().__init__(client, InventoryItem)
-
-
-class InvTxRepository(CrudRepository[InventoryTransaction, UUID]):
-    def __init__(self, client: SupabaseClient):
-        super().__init__(client, InventoryTransaction)
+from services.platform.client_service import SupabaseClient
+from repositories.bases.crud_repo import CrudRepository
 
 
 # 仮インターフェース
-class IMaterialRepository(ICRUDRepository[Material], ABC):
+class MaterialRepository(CrudRepository[Material, UUID]):
     """材料リポジトリ"""
+    def __init__(self, client: SupabaseClient):
+        super().__init__(client, Material)
 
-    @abstractmethod
     async def find_by_category_id(
-        self, category_id: Optional[UUID], user_id: UUID
-    ) -> List[Material]:
+        self, category_id: UUID | None, user_id: UUID
+    ) -> list[Material]:
         """カテゴリIDで材料を取得（None時は全件）"""
         pass
 
-    @abstractmethod
-    async def find_below_alert_threshold(self, user_id: UUID) -> List[Material]:
+    async def find_below_alert_threshold(self, user_id: UUID) -> list[Material]:
         """アラート閾値を下回る材料を取得"""
         pass
 
-    @abstractmethod
-    async def find_below_critical_threshold(self, user_id: UUID) -> List[Material]:
+    async def find_below_critical_threshold(self, user_id: UUID) -> list[Material]:
         """緊急閾値を下回る材料を取得"""
         pass
 
-    @abstractmethod
     async def find_by_ids(
-        self, material_ids: List[UUID], user_id: UUID
-    ) -> List[Material]:
+        self, material_ids: list[UUID], user_id: UUID
+    ) -> list[Material]:
         """IDリストで材料を取得"""
         pass
 
-    @abstractmethod
     async def update_stock_amount(
         self, material_id: UUID, new_amount: Decimal, user_id: UUID
-    ) -> Optional[Material]:
+    ) -> Material | None:
         """材料の在庫量を更新"""
         pass
 
 
-class IMaterialCategoryRepository(ICRUDRepository[MaterialCategory], ABC):
+class MaterialCategoryRepository(CrudRepository[MaterialCategory, UUID]):
     """材料カテゴリリポジトリ"""
+    def __init__(self, client: SupabaseClient):
+        super().__init__(client, MaterialCategory)
 
-    @abstractmethod
-    async def find_active_ordered(self, user_id: UUID) -> List[MaterialCategory]:
+    async def find_active_ordered(self, user_id: UUID) -> list[MaterialCategory]:
         """アクティブなカテゴリ一覧を表示順で取得"""
         pass
 
 
-class IRecipeRepository(ICRUDRepository[Recipe], ABC):
+class RecipeRepository(CrudRepository[Recipe, UUID]):
     """レシピリポジトリ"""
+    def __init__(self, client: SupabaseClient):
+        super().__init__(client, Recipe)
 
-    @abstractmethod
     async def find_by_menu_item_id(
         self, menu_item_id: UUID, user_id: UUID
-    ) -> List[Recipe]:
+    ) -> list[Recipe]:
         """メニューアイテムIDでレシピ一覧を取得"""
         pass
 
-    @abstractmethod
     async def find_by_material_id(
         self, material_id: UUID, user_id: UUID
-    ) -> List[Recipe]:
+    ) -> list[Recipe]:
         """材料IDを使用するレシピ一覧を取得"""
         pass
 
-    @abstractmethod
     async def find_by_menu_item_ids(
-        self, menu_item_ids: List[UUID], user_id: UUID
-    ) -> List[Recipe]:
+        self, menu_item_ids: list[UUID], user_id: UUID
+    ) -> list[Recipe]:
         """複数メニューアイテムのレシピを一括取得"""
         pass

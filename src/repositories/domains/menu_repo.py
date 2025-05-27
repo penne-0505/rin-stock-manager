@@ -1,39 +1,41 @@
 from uuid import UUID
+from repositories.bases.crud_repo import CrudRepository
+from services.platform.client_service import SupabaseClient
+from models.menu import MenuItem, MenuCategory
 
 
 # 仮インターフェース
-class IMenuItemRepository(ICRUDRepository[MenuItem], ABC):
+class MenuItemRepository(CrudRepository[MenuItem, UUID]):
     """メニューアイテムリポジトリ"""
+    def __init__(self, client: SupabaseClient):
+        super().__init__(client, MenuItem)
 
-    @abstractmethod
     async def find_by_category_id(
-        self, category_id: Optional[UUID], user_id: UUID
-    ) -> List[MenuItem]:
+        self, category_id: UUID | None, user_id: UUID
+    ) -> list[MenuItem]:
         """カテゴリIDでメニューアイテムを取得（None時は全件）"""
         pass
 
-    @abstractmethod
-    async def find_available_only(self, user_id: UUID) -> List[MenuItem]:
+    async def find_available_only(self, user_id: UUID) -> list[MenuItem]:
         """販売可能なメニューアイテムのみ取得"""
         pass
 
-    @abstractmethod
-    async def search_by_name(self, keyword: str, user_id: UUID) -> List[MenuItem]:
+    async def search_by_name(self, keyword: str, user_id: UUID) -> list[MenuItem]:
         """名前でメニューアイテムを検索"""
         pass
 
-    @abstractmethod
     async def find_by_ids(
-        self, menu_item_ids: List[UUID], user_id: UUID
-    ) -> List[MenuItem]:
+        self, menu_item_ids: list[UUID], user_id: UUID
+    ) -> list[MenuItem]:
         """IDリストでメニューアイテムを取得"""
         pass
 
 
-class IMenuCategoryRepository(ICRUDRepository[MenuCategory], ABC):
+class MenuCategoryRepository(CrudRepository[MenuCategory, UUID]):
     """メニューカテゴリリポジトリ"""
+    def __init__(self, client: SupabaseClient):
+        super().__init__(client, MenuCategory)
 
-    @abstractmethod
-    async def find_active_ordered(self, user_id: UUID) -> List[MenuCategory]:
+    async def find_active_ordered(self, user_id: UUID) -> list[MenuCategory]:
         """アクティブなカテゴリ一覧を表示順で取得"""
         pass
