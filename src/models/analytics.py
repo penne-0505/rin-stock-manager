@@ -30,22 +30,6 @@ class DailySummary(CoreBaseModel):
         return "daily_summaries"
 
 
-class KitchenStatus(CoreBaseModel):
-    """キッチン状況"""
-
-    id: UUID | None = None
-    active_staff_count: int  # 勤務中スタッフ数
-    estimated_wait_time_minutes: int  # 予想待ち時間（分）
-    notes: str | None = None  # 備考
-    recorded_at: datetime  # 記録日時
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    user_id: UUID | None = None
-
-    def __table_name__(self) -> str:
-        return "kitchen_status"
-
-
 # ============================================================================
 # DTO and Request Models
 # ============================================================================
