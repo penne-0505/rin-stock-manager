@@ -1,16 +1,16 @@
 - [ ] クソデカレビュー😁
     - [ ] repositories/domains/配下の**全リポジトリ**のレビュー・修正・リファクタ
-        - [ ] analysis_repo.pyのレビュー・修正
-        - [ ] inventory_repo.pyのレビュー・修正
-        - [ ] menu_repo.pyのレビュー・修正
-        - [ ] order_repo.pyのレビュー・修正
-        - [ ] stock_repo.pyのレビュー・修正
+        - [x] analysis_repo.pyのレビュー・修正
+        - [x] inventory_repo.pyのレビュー・修正
+        - [x] menu_repo.pyのレビュー・修正
+        - [x] order_repo.pyのレビュー・修正
+        - [x] stock_repo.pyのレビュー・修正
         - [ ] repositories/domains/配下の**全リポジトリ**のリファクタ
     - [ ] services/business/配下の**全サービス**のレビュー・修正・リファクタ
-        - [ ] analysis_service.pyのレビュー・修正
-        - [ ] inventory_service.pyのレビュー・修正
-        - [ ] menu_service.pyのレビュー・修正
-        - [ ] order_service.pyのレビュー・修正
+        - [x] analysis_service.pyのレビュー・修正
+        - [x] inventory_service.pyのレビュー・修正
+        - [x] menu_service.pyのレビュー・修正
+        - [x] order_service.pyのレビュー・修正
         - [ ] services/business/配下の**全サービス**のリファクタ
     - [ ] utils/filters.pyのレビュー・修正・リファクタ
 - [ ] 全ファイルのテストケース作成？
