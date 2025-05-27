@@ -26,9 +26,9 @@ class CrudRepository(ABC, Generic[M, ID]):
         self.pk_cols: Sequence[str] = pk_cols or ("id",)  # 既定は単一 id
         self.table = self._client.table(self.model_cls.__table_name__())
 
-    # ---------------------------------------------------------------------
+    # =================================================================
     # internal helpers (private)
-    # ---------------------------------------------------------------------
+    # =================================================================
     def _normalize_key(self, key: ID | PKMap) -> PKMap:
         if isinstance(key, Mapping):
             return key
@@ -49,9 +49,9 @@ class CrudRepository(ABC, Generic[M, ID]):
                 ) from exc
         return query
 
-    # ------------------------------------------------------------------
+    # ==================================================================
     # CRUD operations
-    # ------------------------------------------------------------------
+    # ==================================================================
 
     # -------- create ---------------------------------------------------
     async def create(self, entity: M) -> M | None:
@@ -108,9 +108,9 @@ class CrudRepository(ABC, Generic[M, ID]):
         rows = await self._apply_pk(self.table.select("1"), pk).limit(1).execute()
         return bool(rows.data)
 
-    # ------------------------------------------------------------------
+    # ==================================================================
     # listing & searching
-    # ------------------------------------------------------------------
+    # ==================================================================
     async def list(self, *, limit: int = 100, offset: int = 0) -> list[M]:
         if limit <= 0:
             raise ValueError("limit must be positive")

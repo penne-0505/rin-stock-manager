@@ -1,12 +1,14 @@
-from services.platform.client_service import SupabaseClient
-from uuid import UUID
 from datetime import datetime
-from repositories.bases.crud_repo import CrudRepository
+from uuid import UUID
+
 from models.analytics import DailySummary
+from repositories.bases.crud_repo import CrudRepository
+from services.platform.client_service import SupabaseClient
 
 
 class DailySummaryRepository(CrudRepository[DailySummary, UUID]):
     """日別集計リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, DailySummary)
 

@@ -1,12 +1,14 @@
 from uuid import UUID
+
+from models.menu import MenuCategory, MenuItem
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
-from models.menu import MenuItem, MenuCategory
 
 
 # 仮インターフェース
 class MenuItemRepository(CrudRepository[MenuItem, UUID]):
     """メニューアイテムリポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, MenuItem)
 
@@ -33,6 +35,7 @@ class MenuItemRepository(CrudRepository[MenuItem, UUID]):
 
 class MenuCategoryRepository(CrudRepository[MenuCategory, UUID]):
     """メニューカテゴリリポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, MenuCategory)
 

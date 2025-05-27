@@ -1,16 +1,18 @@
-from uuid import UUID
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from models.order import Order, OrderItem
 from constants.status import OrderStatus
 from constants.types import Filter
-from services.client_service import SupabaseClient
-from src.repositories.abstract.crud_repo import CrudRepository
+from models.order import Order, OrderItem
+from repositories.bases.crud_repo import CrudRepository
+from services.platform.client_service import SupabaseClient
+
 
 # 仮インターフェース
 class OrderRepository(CrudRepository[Order, UUID]):
     """注文リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, Order)
 

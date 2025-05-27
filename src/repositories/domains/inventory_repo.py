@@ -1,14 +1,15 @@
-from uuid import UUID
-from models.inventory import Material, MaterialCategory, Recipe
 from decimal import Decimal
+from uuid import UUID
 
-from services.platform.client_service import SupabaseClient
+from models.inventory import Material, MaterialCategory, Recipe
 from repositories.bases.crud_repo import CrudRepository
+from services.platform.client_service import SupabaseClient
 
 
 # 仮インターフェース
 class MaterialRepository(CrudRepository[Material, UUID]):
     """材料リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, Material)
 
@@ -41,6 +42,7 @@ class MaterialRepository(CrudRepository[Material, UUID]):
 
 class MaterialCategoryRepository(CrudRepository[MaterialCategory, UUID]):
     """材料カテゴリリポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, MaterialCategory)
 
@@ -51,6 +53,7 @@ class MaterialCategoryRepository(CrudRepository[MaterialCategory, UUID]):
 
 class RecipeRepository(CrudRepository[Recipe, UUID]):
     """レシピリポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, Recipe)
 

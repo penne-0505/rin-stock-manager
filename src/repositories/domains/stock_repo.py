@@ -1,12 +1,15 @@
-from services.platform.client_service import SupabaseClient
-from uuid import UUID
-from models.stock import Purchase, PurchaseItem, StockAdjustment, StockTransaction
 from datetime import datetime
+from uuid import UUID
+
+from models.stock import Purchase, PurchaseItem, StockAdjustment, StockTransaction
 from repositories.bases.crud_repo import CrudRepository
+from services.platform.client_service import SupabaseClient
+
 
 # 仮インターフェース
 class PurchaseRepository(CrudRepository[Purchase, UUID]):
     """仕入れリポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, Purchase)
 
@@ -23,6 +26,7 @@ class PurchaseRepository(CrudRepository[Purchase, UUID]):
 
 class IPurchaseItemRepository(CrudRepository[PurchaseItem, UUID]):
     """仕入れ明細リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, PurchaseItem)
 
@@ -39,6 +43,7 @@ class IPurchaseItemRepository(CrudRepository[PurchaseItem, UUID]):
 
 class IStockAdjustmentRepository(CrudRepository[StockAdjustment, UUID]):
     """在庫調整リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, StockAdjustment)
 
@@ -55,6 +60,7 @@ class IStockAdjustmentRepository(CrudRepository[StockAdjustment, UUID]):
 
 class IStockTransactionRepository(CrudRepository[StockTransaction, UUID]):
     """在庫取引リポジトリ"""
+
     def __init__(self, client: SupabaseClient):
         super().__init__(client, StockTransaction)
 
