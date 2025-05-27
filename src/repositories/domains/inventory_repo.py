@@ -78,8 +78,6 @@ class MaterialRepository(CrudRepository[Material, UUID]):
         if not materials:
             return None
 
-        material = materials[0]
-
         # 在庫量を更新
         update_data = {"current_stock": new_amount}
         updated_material = await self.update(material_id, update_data)
