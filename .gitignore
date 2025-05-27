@@ -133,6 +133,9 @@ cython_debug/
 # IDE - JetBrains
 .idea/
 
+# Firebase Studio(Project IDX) settings
+.idx/
+
 # poetry
 poetry.lock
 
