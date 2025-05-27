@@ -141,3 +141,6 @@ poetry.lock
 
 # github copilot
 .github/
+
+# Claude Code
+CLAUDE.md
