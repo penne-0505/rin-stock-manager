@@ -1,4 +1,4 @@
-from supabase import AsyncClient, create_client
+from supabase import AsyncClient, acreate_client
 
 from utils.config import settings
 from utils.url_parser import get_param_value
@@ -14,7 +14,7 @@ class SupabaseClient:
         if SupabaseClient._supabase_client_instance is None:
             try:
                 if self.SUPABASE_URL and self.SUPABASE_ANON_KEY:
-                    SupabaseClient._supabase_client_instance = create_client(
+                    SupabaseClient._supabase_client_instance = acreate_client(
                         self.SUPABASE_URL, self.SUPABASE_ANON_KEY
                     )
                 else:
