@@ -36,7 +36,7 @@ class SupabaseClient:
             )
 
         try:
-            res = self.supabase_client.auth.sign_in_with_oauth(
+            res = await self.supabase_client.auth.sign_in_with_oauth(
                 {
                     "provider": "google",
                     "options": {"redirect_to": "http://localhost:8550/auth/callback"},
@@ -63,8 +63,10 @@ class SupabaseClient:
             raise ValueError("Authorization code not found in the URL.")
 
         try:
-            exchange_response = self.supabase_client.auth.exchange_code_for_session(
-                {"auth_code": code}
+            exchange_response = (
+                await self.supabase_client.auth.exchange_code_for_session(
+                    {"auth_code": code}
+                )
             )
 
             if not exchange_response or not exchange_response.session:
@@ -76,7 +78,7 @@ class SupabaseClient:
             ) from e
 
         try:
-            user_response = self.supabase_client.auth.get_user()
+            user_response = await self.supabase_client.auth.get_user()
             if user_response and user_response.user:
                 return user_response.user, None
             else:
