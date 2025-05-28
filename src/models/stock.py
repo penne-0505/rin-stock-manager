@@ -25,7 +25,8 @@ class StockTransaction(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "stock_transactions"
 
 
@@ -39,7 +40,8 @@ class Purchase(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "purchases"
 
 
@@ -53,7 +55,8 @@ class PurchaseItem(CoreBaseModel):
     created_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "purchase_items"
 
 
@@ -69,7 +72,8 @@ class StockAdjustment(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "stock_adjustments"
 
 

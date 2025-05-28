@@ -26,7 +26,8 @@ class Material(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "materials"
 
     def get_stock_level(self) -> StockLevel:
@@ -49,7 +50,8 @@ class MaterialCategory(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "material_categories"
 
 
@@ -66,7 +68,8 @@ class Recipe(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "recipes"
 
 

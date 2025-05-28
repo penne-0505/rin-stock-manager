@@ -1,12 +1,11 @@
 import flet as ft
 from flet import Column, ElevatedButton, Page, RouteChangeEvent, SnackBar, Text, app
 
-from repositories.concrete.inventory_item_repo import InventoryItemRepository
-from repositories.concrete.order_repo import OrderItemRepository, OrderRepository
+from models.order import OrderSearchRequest
+from services.business.order_service import OrderService
 
-# services.auth_service からのインポートを変更
-from services.app_services.client_service import SupabaseClient
-from services.domain_services.order_service import OrderService
+# 最新の実装に合わせてインポートを修正
+from services.platform.client_service import SupabaseClient
 
 # AuthService のインスタンスを作成
 auth_service = SupabaseClient()
@@ -44,30 +43,43 @@ async def handle_auth_callback(url: str, pg: Page):
     if user and hasattr(user, "email"):
         pg.controls.append(Text(f"ログイン成功！こんにちは {user.email}"))
 
-        inventory_repo = InventoryItemRepository(auth_service.supabase_client)
-        order_repo = OrderRepository(auth_service.supabase_client)
-        order_item_repo = OrderItemRepository(auth_service.supabase_client)
+        # 最新の実装に合わせて OrderService を初期化
+        order_service = OrderService(auth_service)
 
-        order_service = OrderService(
-            order_repo=order_repo,
-            order_item_repo=order_item_repo,
-            inv_item_repo=inventory_repo,
+        # フィルタなしで全件取得するために OrderSearchRequest を使用
+        search_request = OrderSearchRequest(
+            page=1,
+            limit=100,  # 適当な上限
+            status_filter=None,  # 全ステータス
+            date_from=None,
+            date_to=None,
+            customer_name=None,
+            menu_item_name=None,
         )
 
-        orders = await order_service.get_order_by_filter()  # フィルタ無しで、全件取得
-        if orders is None:  # データ取得失敗の場合
-            pg.controls.append(Text("注文データの取得に失敗しました。"))
-        elif not orders:  # データが空の場合
-            pg.controls.append(Text("あなたの注文データはありませんでした。"))
-        else:
-            for order in orders:
-                pg.controls.append(Text(f"注文ID: {order.id}"))
-                for item in order.items:
-                    pg.controls.append(
-                        Text(
-                            f"アイテムID: {item.inventory_item_id}, 数量: {item.quantity}"
-                        )
+        try:
+            # get_order_by_filter の代わりに get_order_history を使用
+            result = await order_service.get_order_history(search_request, user.id)
+            orders = result.get("orders", [])
+
+            if not orders:  # データが空の場合
+                pg.controls.append(Text("あなたの注文データはありませんでした。"))
+            else:
+                for order in orders:
+                    pg.controls.append(Text(f"注文ID: {order.id}"))
+                    # 注文明細を取得
+                    order_items = await order_service.order_item_repo.find_by_order_id(
+                        order.id
                     )
+                    for item in order_items:
+                        pg.controls.append(
+                            Text(
+                                f"メニューアイテムID: {item.menu_item_id}, 数量: {item.quantity}"
+                            )
+                        )
+        except Exception as e:
+            pg.add(Text(f"注文データの取得に失敗しました: {str(e)}"))
+            raise e
     else:
         pg.controls.append(
             Text("ログインに失敗しました。ユーザー情報を取得できませんでした。")

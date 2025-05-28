@@ -14,5 +14,6 @@ class SyncRecord(CoreBaseModel):
     user_id: UUID | None = None
     completed_at: datetime | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "sync_records"

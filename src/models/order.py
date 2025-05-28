@@ -29,7 +29,8 @@ class Order(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "orders"
 
 
@@ -47,7 +48,8 @@ class OrderItem(CoreBaseModel):
     created_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "order_items"
 
 

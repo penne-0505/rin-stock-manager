@@ -26,7 +26,8 @@ class DailySummary(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "daily_summaries"
 
 

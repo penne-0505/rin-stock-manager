@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -19,7 +19,8 @@ class MenuCategory(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "menu_categories"
 
 
@@ -39,7 +40,8 @@ class MenuItem(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "menu_items"
 
 
@@ -56,7 +58,8 @@ class MenuItemOption(CoreBaseModel):
     updated_at: datetime | None = None
     user_id: UUID | None = None
 
-    def __table_name__(self) -> str:
+    @classmethod
+    def __table_name__(cls) -> str:
         return "menu_item_options"
 
 
@@ -71,5 +74,5 @@ class MenuAvailabilityInfo:
 
     menu_item_id: UUID
     is_available: bool
-    missing_materials: list[str] = []  # 不足材料名のリスト
+    missing_materials: list[str] = field(default_factory=list)  # 不足材料名のリスト
     estimated_servings: int | None = None  # 作れる数量
