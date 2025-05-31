@@ -15,7 +15,6 @@ Restaurant inventory management system - A Python application providing efficien
 
 - **Backend**: Supabase (PostgreSQL) for data persistence
 - **Frontend**: Flet framework for desktop UI
-- **Architecture**: Clean Architecture with Repository/Service pattern
 - **Language**: Python 3.12+
 - **Dependencies**: Poetry for dependency management
 
@@ -46,16 +45,16 @@ cp .env.example .env
 pytest
 ```
 
-For detailed setup instructions, see the [Setup Guide](./setup.md).
+For detailed setup instructions, see the [Setup Guide](./docs/setup.md).
 
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Setup Guide](./setup.md) | Installation and configuration instructions |
-| [Architecture Guide](./architecture.md) | System design details |
-| [API Reference](./api-reference.md) | Repository/Service API documentation |
-| [Development Guide](./development.md) | Development workflow and contribution guidelines |
+| [Setup Guide](./docs/setup.md) | Installation and configuration instructions |
+| [Architecture Guide](./docs/architecture.md) | System design details |
+| [API Reference](./docs/api-reference.md) | Repository/Service API documentation |
+| [Development Guide](./docs/development.md) | Development workflow and contribution guidelines |
 
 ## 🏗️ Project Status
 
@@ -77,28 +76,28 @@ For detailed setup instructions, see the [Setup Guide](./setup.md).
 - Deployment guides
 - Performance optimization
 
-## 🏛️ Architecture Overview
+## 🏛️ System Structure
 
-The system follows Clean Architecture principles ensuring clear separation of concerns:
+The system is organized in layered modules:
 
 ```
 ┌─────────────────────────────────────────┐
-│              UI Layer (Flet)            │  ← Presentation
+│              UI Layer (Flet)            │  ← User Interface
 ├─────────────────────────────────────────┤
 │           Service Layer                 │  ← Business Logic
 ├─────────────────────────────────────────┤
 │         Repository Layer                │  ← Data Access
 ├─────────────────────────────────────────┤
-│           Model Layer                   │  ← Domain Models
+│           Model Layer                   │  ← Data Models
 ├─────────────────────────────────────────┤
-│     Infrastructure (Supabase)          │  ← External Services
+│     Infrastructure (Supabase)          │  ← Database
 └─────────────────────────────────────────┘
 ```
 
-### Key Components
+### Implementation Details
 
-- **Repository Pattern**: Generic CRUD operations with advanced filtering
-- **Business Services**: Complete business logic layer with analytics and workflow management
+- **Repository Layer**: Generic CRUD operations with advanced filtering
+- **Business Services**: Analytics, inventory, menu, and order management
 - **Filtering System**: Support for complex AND/OR queries
 - **Offline Support**: FileQueue + ReconnectWatcher for connectivity issues
 - **Configuration**: Pydantic-based environment settings
@@ -132,11 +131,11 @@ mypy src/                  # Type checking
 5. Update documentation
 6. Submit a pull request
 
-See the [Development Guide](./development.md) for detailed instructions.
+See the [Development Guide](./docs/development.md) for detailed instructions.
 
 ## 📄 License
 
-[License information to be added]
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## 🆘 Support
 
