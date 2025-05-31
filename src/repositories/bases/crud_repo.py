@@ -5,9 +5,10 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Generic, TypeVar, overload
 
 from constants.types import Filter, OrderBy, PKMap
-from models._base import CoreBaseModel
+from models.bases._base import CoreBaseModel
 from services.platform.client_service import SupabaseClient
 from utils.query_utils import apply_filters_to_query, apply_order_by_to_query
+from utils.serializers import serialize_for_supabase, bulk_serialize_for_supabase
 
 M = TypeVar("M", bound=CoreBaseModel)
 ID = TypeVar("ID")  # 単一主キー値の型（int, str など）
@@ -55,9 +56,16 @@ class CrudRepository(ABC, Generic[M, ID]):
 
     # -------- create ---------------------------------------------------
     async def create(self, entity: M) -> M | None:
-        dumped_entity = entity.model_dump()
-        result = await self.table.insert(dumped_entity).execute()
+        serialized_entity = serialize_for_supabase(entity)
+        result = await self.table.insert(serialized_entity).execute()
         return self.model_cls.model_validate(result.data[0]) if result.data else None
+
+    async def bulk_create(self, entities: Sequence[M]) -> list[M]:
+        if not entities:
+            return []
+        serialized_entities = bulk_serialize_for_supabase(entities)
+        result = await self.table.insert(serialized_entities).execute()
+        return [self.model_cls.model_validate(row) for row in result.data] if result.data else []
 
     # -------- get ------------------------------------------------------
     @overload
@@ -95,6 +103,24 @@ class CrudRepository(ABC, Generic[M, ID]):
     async def delete(self, key):  # type: ignore[override]
         pk = self._normalize_key(key)
         await self._apply_pk(self.table.delete(), pk).execute()
+
+    async def bulk_delete(self, keys: Sequence[ID | PKMap]) -> None:
+        """複数のキーで一括削除"""
+        if not keys:
+            return
+        
+        # 単一カラムPKの場合は効率的なin演算子を使用
+        if len(self.pk_cols) == 1:
+            pk_col = self.pk_cols[0]
+            values = []
+            for key in keys:
+                normalized = self._normalize_key(key)
+                values.append(normalized[pk_col])
+            await self.table.delete().in_(pk_col, values).execute()
+        else:
+            # 複合PKの場合は個別削除（現状の制限）
+            for key in keys:
+                await self.delete(key)
 
     # -------- exists ---------------------------------------------------
     @overload
