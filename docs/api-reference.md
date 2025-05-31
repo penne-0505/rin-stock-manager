@@ -468,3 +468,209 @@ summary = await daily_summary_repo.find_by_date(date, user_id)
 # Sales analysis
 sales = await order_item_repo.get_menu_item_sales_summary(30, user_id)
 ```
+
+## Business Service Layer
+
+The business service layer provides high-level operations and workflows built on top of repositories.
+
+### AnalyticsService
+
+Provides comprehensive analytics and reporting capabilities.
+
+```python
+from services.business.analysis_service import AnalyticsService
+```
+
+#### Methods
+
+##### `get_real_time_daily_stats(target_date: datetime, user_id: UUID) -> dict[str, Any]`
+
+Returns real-time daily statistics including orders, revenue, and customer metrics.
+
+**Example:**
+```python
+stats = await analytics.get_real_time_daily_stats(datetime.now(), user_id)
+# Returns: {"total_orders": 45, "total_revenue": 1250.00, "avg_order_value": 27.78, ...}
+```
+
+##### `get_popular_items_ranking(days: int, user_id: UUID, limit: int = 10) -> list[dict[str, Any]]`
+
+Returns ranking of most popular menu items by sales volume.
+
+##### `calculate_average_preparation_time(days: int, user_id: UUID) -> float`
+
+Calculates average order preparation time for performance analysis.
+
+##### `get_material_consumption_analysis(days: int, user_id: UUID) -> list[dict[str, Any]]`
+
+Analyzes material consumption patterns for inventory planning.
+
+### InventoryService
+
+Manages inventory operations including stock monitoring, purchasing, and material consumption.
+
+```python
+from services.business.inventory_service import InventoryService
+```
+
+#### Methods
+
+##### `create_material(material_data: dict[str, Any], user_id: UUID) -> Material`
+
+Creates a new material with validation and default settings.
+
+**Example:**
+```python
+material = await inventory.create_material({
+    "name": "Tomatoes",
+    "unit": "kg",
+    "current_stock": 50.0,
+    "alert_threshold": 10.0,
+    "critical_threshold": 5.0
+}, user_id)
+```
+
+##### `get_stock_alerts_by_level(alert_level: str, user_id: UUID) -> list[Material]`
+
+Returns materials requiring attention based on stock levels.
+
+**Parameters:**
+- `alert_level`: "critical" or "low"
+
+##### `consume_materials_for_order(order_id: UUID, user_id: UUID) -> bool`
+
+Automatically deducts materials from stock based on order recipes.
+
+##### `record_purchase(purchase_data: dict[str, Any], items: list[dict[str, Any]], user_id: UUID) -> Purchase`
+
+Records purchase and automatically updates material stock levels.
+
+### MenuService
+
+Handles menu management with real-time availability based on inventory.
+
+```python
+from services.business.menu_service import MenuService
+```
+
+#### Methods
+
+##### `check_menu_availability(user_id: UUID) -> list[dict[str, Any]]`
+
+Checks availability of all menu items based on current stock levels.
+
+**Returns:** List with menu items and their availability status
+
+##### `calculate_max_servings(menu_item_id: UUID, user_id: UUID) -> int`
+
+Calculates maximum possible servings based on available ingredients.
+
+##### `auto_update_menu_availability_by_stock(user_id: UUID) -> int`
+
+Automatically updates menu item availability based on stock levels.
+
+**Returns:** Number of items updated
+
+### OrderService (CartService, OrderService, KitchenService)
+
+Complete order workflow from cart management to kitchen operations.
+
+```python
+from services.business.order_service import CartService, OrderService, KitchenService
+```
+
+#### CartService Methods
+
+##### `get_or_create_active_cart(user_id: UUID) -> Order`
+
+Retrieves existing cart or creates new one.
+
+##### `add_item_to_cart(user_id: UUID, menu_item_id: UUID, quantity: int) -> OrderItem`
+
+Adds item to cart with stock validation.
+
+##### `calculate_cart_total(cart_id: UUID) -> Decimal`
+
+Calculates total amount for cart including all items.
+
+#### OrderService Methods
+
+##### `checkout_cart(cart_id: UUID, user_id: UUID) -> Order`
+
+Converts cart to confirmed order and processes stock consumption.
+
+##### `cancel_order(order_id: UUID, user_id: UUID) -> bool`
+
+Cancels order and restores consumed materials to stock.
+
+##### `get_order_history(user_id: UUID, page: int = 1, limit: int = 20, filters: dict = None) -> tuple[list[Order], int]`
+
+Retrieves paginated order history with filtering options.
+
+#### KitchenService Methods
+
+##### `get_kitchen_queue(user_id: UUID) -> list[dict[str, Any]]`
+
+Returns prioritized kitchen queue with preparation details.
+
+##### `optimize_kitchen_queue(user_id: UUID) -> list[dict[str, Any]]`
+
+Optimizes order sequence based on preparation time and priority.
+
+##### `calculate_estimated_completion_time(order_id: UUID, user_id: UUID) -> datetime`
+
+Predicts order completion time based on queue and preparation requirements.
+
+## Service Integration Patterns
+
+### Service Initialization
+
+```python
+from services.platform.client_service import SupabaseClient
+from services.business.inventory_service import InventoryService
+from repositories.domains.inventory_repo import MaterialRepository
+
+client = SupabaseClient()
+material_repo = MaterialRepository(client)
+inventory_service = InventoryService(client)
+```
+
+### Common Workflows
+
+#### Complete Order Processing
+```python
+# 1. Add items to cart
+cart = await cart_service.get_or_create_active_cart(user_id)
+item = await cart_service.add_item_to_cart(user_id, menu_item_id, quantity)
+
+# 2. Checkout
+order = await order_service.checkout_cart(cart.id, user_id)
+
+# 3. Kitchen processing
+queue = await kitchen_service.get_kitchen_queue(user_id)
+completion_time = await kitchen_service.calculate_estimated_completion_time(order.id, user_id)
+```
+
+#### Inventory Management
+```python
+# Check alerts
+critical_items = await inventory_service.get_stock_alerts_by_level("critical", user_id)
+
+# Record purchase
+purchase = await inventory_service.record_purchase(purchase_data, items, user_id)
+
+# Update menu availability
+updated = await menu_service.auto_update_menu_availability_by_stock(user_id)
+```
+
+#### Analytics Dashboard
+```python
+# Daily statistics
+stats = await analytics_service.get_real_time_daily_stats(datetime.now(), user_id)
+
+# Popular items
+popular = await analytics_service.get_popular_items_ranking(30, user_id)
+
+# Performance metrics
+avg_prep_time = await analytics_service.calculate_average_preparation_time(7, user_id)
+```
