@@ -10,11 +10,14 @@ class SupabaseClient:
     def __init__(self):
         self.SUPABASE_URL = settings.SUPABASE_URL
         self.SUPABASE_ANON_KEY = settings.SUPABASE_ANON_KEY
+        self.supabase_client = None
 
+    async def init_client(self):
+        """Supabase クライアントの初期化を行う"""
         if SupabaseClient._supabase_client_instance is None:
             try:
                 if self.SUPABASE_URL and self.SUPABASE_ANON_KEY:
-                    SupabaseClient._supabase_client_instance = acreate_client(
+                    SupabaseClient._supabase_client_instance = await acreate_client(
                         self.SUPABASE_URL, self.SUPABASE_ANON_KEY
                     )
                 else:
@@ -30,6 +33,8 @@ class SupabaseClient:
 
     async def initiate_oauth_login(self) -> str | None:
         """Google OAuth URL を取得する"""
+        await self.init_client()
+
         if not self.supabase_client:
             raise RuntimeError(
                 "Supabase client is not initialized. Please check your configuration."
@@ -52,6 +57,8 @@ class SupabaseClient:
         self, url: str
     ) -> tuple[object | None, str | None] | None:
         """redirect URI に戻ったときの処理: トークンをセット→ユーザー情報取得"""
+        await self.init_client()
+
         if not self.supabase_client:
             raise RuntimeError(
                 "Supabase client is not initialized. Please check your configuration."
