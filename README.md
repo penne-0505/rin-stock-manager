@@ -2,14 +2,14 @@
 
 Restaurant inventory management system - A Python application providing efficient inventory tracking, order management, and analytics capabilities.
 
-## 🚀 Key Features
+## 🚀 Key Features (plans🥲)
 
 - **📦 Inventory Management**: Track materials, categories, and recipes
 - **🛒 Order Processing**: Handle orders with draft, active, and completed states
 - **📊 Analytics**: Daily summaries and business insights
 - **🍽️ Menu Management**: Organize menu items and categories
-- **💾 Offline Support**: Queue operations when offline, sync when reconnected
-- **🔒 Data Security**: User-isolated data with proper authentication
+- **💾 Offline Support**: Queue operations when offline, sync when reconnected (still incomplete)
+- **🔒 Data Security**: User-isolated data with proper authentication (this is also😢)
 
 ## 🛠️ Technology Stack
 
