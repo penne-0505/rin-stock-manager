@@ -4,27 +4,27 @@ This document provides a comprehensive overview of the Rin Stock Manager archite
 
 ## Overview
 
-The Rin Stock Manager follows **Clean Architecture** principles, ensuring separation of concerns, testability, and maintainability. The system is designed with a layered approach that promotes dependency inversion and domain-driven design.
+The Rin Stock Manager implements a layered module structure with separation of concerns. The system organizes code into distinct layers with defined responsibilities and dependencies.
 
-## Architecture Layers
+## System Layers
 
 ```
 ┌─────────────────────────────────────────┐
-│              UI Layer (Flet)            │  ← Presentation
+│              UI Layer (Flet)            │  ← User Interface
 ├─────────────────────────────────────────┤
 │           Service Layer                 │  ← Business Logic
 ├─────────────────────────────────────────┤
 │         Repository Layer                │  ← Data Access
 ├─────────────────────────────────────────┤
-│           Model Layer                   │  ← Domain Models
+│           Model Layer                   │  ← Data Models
 ├─────────────────────────────────────────┤
-│     Infrastructure (Supabase)          │  ← External Services
+│     Infrastructure (Supabase)          │  ← Database
 └─────────────────────────────────────────┘
 ```
 
 ### 1. Model Layer (`src/models/`)
 
-Domain models define the core business entities using Pydantic for validation and serialization.
+Data models using Pydantic for validation and serialization.
 
 **Base Model:**
 ```python
@@ -213,13 +213,13 @@ class Settings(BaseSettings):
 
 ### 1. Repository Pattern
 
-Abstracts data access logic and provides a consistent interface for domain objects.
+Provides data access operations with consistent interfaces.
 
-**Benefits:**
-- Testability through mocking
+**Implementation:**
+- Generic CRUD operations
 - Centralized query logic
 - Consistent error handling
-- Database abstraction
+- Database abstraction layer
 
 ### 2. Generic Programming
 
@@ -233,7 +233,7 @@ class CrudRepository(Generic[M, ID]):
 
 ### 3. Dependency Injection
 
-Services depend on abstractions, not concrete implementations:
+Services receive repository instances through constructor parameters:
 
 ```python
 class InventoryService:
@@ -241,9 +241,9 @@ class InventoryService:
         self.material_repo = material_repo
 ```
 
-### 4. Event-Driven Architecture
+### 4. Event-Driven Implementation
 
-Offline support uses event-driven patterns for connectivity monitoring and queue processing.
+Offline support implements connectivity monitoring and queue processing through events.
 
 ## Data Flow
 
