@@ -1,18 +1,17 @@
 # Rin Stock Manager
 
-A Python-based restaurant stock management system designed for efficient inventory tracking, order management, and analytics. Built with modern architecture patterns and offline-first capabilities.
+Restaurant inventory management system - A Python application providing efficient inventory tracking, order management, and analytics capabilities.
 
-## Features
+## 🚀 Key Features
 
-- **Inventory Management**: Track materials, categories, and recipes
-- **Order Processing**: Handle orders with draft, active, and completed states
-- **Stock Control**: Manage purchases, adjustments, and transactions
-- **Analytics**: Daily summaries and business insights
-- **Menu Management**: Organize menu items and categories
-- **Offline Support**: Queue operations when offline, sync when reconnected
-- **Data Security**: User-isolated data with proper authentication
+- **📦 Inventory Management**: Track materials, categories, and recipes
+- **🛒 Order Processing**: Handle orders with draft, active, and completed states
+- **📊 Analytics**: Daily summaries and business insights
+- **🍽️ Menu Management**: Organize menu items and categories
+- **💾 Offline Support**: Queue operations when offline, sync when reconnected
+- **🔒 Data Security**: User-isolated data with proper authentication
 
-## Technology Stack
+## 🛠️ Technology Stack
 
 - **Backend**: Supabase (PostgreSQL) for data persistence
 - **Frontend**: Flet framework for desktop UI
@@ -20,7 +19,7 @@ A Python-based restaurant stock management system designed for efficient invento
 - **Language**: Python 3.12+
 - **Dependencies**: Poetry for dependency management
 
-## Quick Start
+## ⚡ Quick Start
 
 ### Prerequisites
 
@@ -30,83 +29,115 @@ A Python-based restaurant stock management system designed for efficient invento
 
 ### Installation
 
-1. Clone the repository:
 ```bash
+# 1. Clone the repository
 git clone <repository-url>
 cd rin-stock-manager
-```
 
-2. Install dependencies:
-```bash
+# 2. Install dependencies
 poetry install
 poetry shell
-```
 
-3. Configure environment:
-```bash
+# 3. Configure environment
 cp .env.example .env
 # Edit .env with your Supabase credentials
-```
 
-4. Run tests:
-```bash
+# 4. Run tests
 pytest
 ```
 
-## Architecture
+For detailed setup instructions, see the [Setup Guide](./setup.md).
 
-The project follows Clean Architecture principles with clear separation of concerns:
+## 📚 Documentation
 
-- **Models**: Pydantic models with database table mapping
-- **Repositories**: Data access layer with CRUD operations
-- **Services**: Business logic layer (in development)
-- **Utils**: Configuration, error handling, and utilities
+| Document | Description |
+|----------|-------------|
+| [Setup Guide](./setup.md) | Installation and configuration instructions |
+| [Architecture Guide](./architecture.md) | System design details |
+| [API Reference](./api-reference.md) | Repository/Service API documentation |
+| [Development Guide](./development.md) | Development workflow and contribution guidelines |
+
+## 🏗️ Project Status
+
+### ✅ Completed
+- Repository layer with full CRUD operations
+- Advanced filtering system with AND/OR logic
+- All domain repositories (inventory, menu, order, stock, analytics)
+- Business service layer with comprehensive functionality
+- Model definitions and validation
+- Configuration management
+
+### 🚧 In Progress
+- UI development with Flet
+- Offline functionality integration
+- Comprehensive test suite
+
+### 📋 Planned
+- Business service API documentation
+- Deployment guides
+- Performance optimization
+
+## 🏛️ Architecture Overview
+
+The system follows Clean Architecture principles ensuring clear separation of concerns:
+
+```
+┌─────────────────────────────────────────┐
+│              UI Layer (Flet)            │  ← Presentation
+├─────────────────────────────────────────┤
+│           Service Layer                 │  ← Business Logic
+├─────────────────────────────────────────┤
+│         Repository Layer                │  ← Data Access
+├─────────────────────────────────────────┤
+│           Model Layer                   │  ← Domain Models
+├─────────────────────────────────────────┤
+│     Infrastructure (Supabase)          │  ← External Services
+└─────────────────────────────────────────┘
+```
 
 ### Key Components
 
 - **Repository Pattern**: Generic CRUD operations with advanced filtering
+- **Business Services**: Complete business logic layer with analytics and workflow management
 - **Filtering System**: Support for complex AND/OR queries
 - **Offline Support**: FileQueue + ReconnectWatcher for connectivity issues
-- **Configuration**: Environment-based settings with Pydantic
+- **Configuration**: Pydantic-based environment settings
 
-## Documentation
+## 🔧 Development
 
-- [Architecture Guide](./architecture.md) - Detailed system design
-- [API Reference](./api-reference.md) - Repository and service documentation
-- [Setup Guide](./setup.md) - Installation and configuration
-- [Development Guide](./development.md) - Contributing and development workflow
+### Basic Commands
 
-## Project Status
+```bash
+# Environment setup
+poetry install && poetry shell
 
-### Completed ✅
-- Repository layer with full CRUD operations
-- Advanced filtering system with OR/AND logic
-- All domain repositories (inventory, menu, order, stock, analytics)
-- Model definitions and validation
-- Configuration management
+# Testing
+pytest                     # Run all tests
+pytest --cov=src          # Run with coverage
+pytest -v                 # Verbose output
 
-### In Progress 🚧
-- Business service layer
-- UI development with Flet
-- Offline functionality integration
+# Code quality (planned)
+black src/ tests/          # Code formatting
+isort src/ tests/          # Import sorting
+flake8 src/ tests/         # Linting
+mypy src/                  # Type checking
+```
 
-### Planned 📋
-- Comprehensive test suite
-- API documentation
-- Deployment guides
-
-## Contributing
+### Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Submit a pull request
+5. Update documentation
+6. Submit a pull request
 
-## License
+See the [Development Guide](./development.md) for detailed instructions.
+
+## 📄 License
 
 [License information to be added]
 
-## Support
+## 🆘 Support
 
 For questions or issues, please create an issue in the repository.
