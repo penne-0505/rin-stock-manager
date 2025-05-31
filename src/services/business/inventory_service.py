@@ -3,16 +3,11 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from constants.options import FilterOp, ReferenceType, TransactionType
-from models.inventory import Material, MaterialCategory, MaterialStockInfo, StockLevel
-from models.stock import (
-    Purchase,
-    PurchaseItem,
-    PurchaseRequest,
-    StockAdjustment,
-    StockTransaction,
-    StockUpdateRequest,
-)
+from constants.options import FilterOp, ReferenceType, StockLevel, TransactionType
+from models.domains.inventory import Material, MaterialCategory
+from models.dto.inventory import MaterialStockInfo
+from models.domains.stock import Purchase, PurchaseItem, StockAdjustment, StockTransaction
+from models.dto.stock import PurchaseRequest, StockUpdateRequest
 from repositories.domains.inventory_repo import (
     MaterialCategoryRepository,
     MaterialRepository,
@@ -40,6 +35,12 @@ class InventoryService:
         self.stock_adjustment_repo = StockAdjustmentRepository(client)
         self.stock_transaction_repo = StockTransactionRepository(client)
         self.order_item_repo = OrderItemRepository(client)
+
+    async def create_material(self, material: Material, user_id: UUID) -> Material:
+        """材料を作成"""
+        # ユーザーIDを設定
+        material.user_id = user_id
+        return await self.material_repo.create(material)
 
     async def get_material_categories(self, user_id: UUID) -> list[MaterialCategory]:
         """材料カテゴリ一覧を取得"""
