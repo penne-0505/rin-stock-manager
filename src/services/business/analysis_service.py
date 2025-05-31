@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from constants.status import OrderStatus
-from models.analytics import DailyStatsResult
+from models.dto.analytics import DailyStatsResult
 from repositories.domains.analysis_repo import DailySummaryRepository
 from repositories.domains.order_repo import OrderItemRepository, OrderRepository
 from repositories.domains.stock_repo import StockTransactionRepository

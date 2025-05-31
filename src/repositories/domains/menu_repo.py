@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from constants.options import FilterOp
-from models.menu import MenuCategory, MenuItem
+from models.domains.menu import MenuCategory, MenuItem
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from constants.options import FilterOp
-from models.analytics import DailySummary
+from models.domains.analytics import DailySummary
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
 

@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from constants.options import FilterOp
-from models.stock import Purchase, PurchaseItem, StockAdjustment, StockTransaction
+from models.domains.stock import Purchase, PurchaseItem, StockAdjustment, StockTransaction
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
 
@@ -87,16 +87,7 @@ class PurchaseItemRepository(CrudRepository[PurchaseItem, UUID]):
         self, purchase_items: list[PurchaseItem]
     ) -> list[PurchaseItem]:
         """仕入れ明細を一括作成"""
-        if not purchase_items:
-            return []
-
-        created_items = []
-        for item in purchase_items:
-            created_item = await self.create(item)
-            if created_item:
-                created_items.append(created_item)
-
-        return created_items
+        return await self.bulk_create(purchase_items)
 
 
 class StockAdjustmentRepository(CrudRepository[StockAdjustment, UUID]):
@@ -154,16 +145,7 @@ class StockTransactionRepository(CrudRepository[StockTransaction, UUID]):
         self, transactions: list[StockTransaction]
     ) -> list[StockTransaction]:
         """在庫取引を一括作成"""
-        if not transactions:
-            return []
-
-        created_transactions = []
-        for transaction in transactions:
-            created_transaction = await self.create(transaction)
-            if created_transaction:
-                created_transactions.append(created_transaction)
-
-        return created_transactions
+        return await self.bulk_create(transactions)
 
     async def find_by_reference(
         self, reference_type: str, reference_id: UUID, user_id: UUID

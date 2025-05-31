@@ -6,12 +6,11 @@ from uuid import UUID
 
 from constants.options import FilterOp, PaymentMethod
 from constants.status import OrderStatus
-from models.order import (
+from models.domains.order import Order, OrderItem
+from models.dto.order import (
     CartItemRequest,
-    Order,
     OrderCalculationResult,
     OrderCheckoutRequest,
-    OrderItem,
     OrderSearchRequest,
 )
 from repositories.domains.inventory_repo import MaterialRepository, RecipeRepository

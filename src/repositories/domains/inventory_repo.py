@@ -2,7 +2,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from constants.options import FilterOp
-from models.inventory import Material, MaterialCategory, Recipe
+from models.domains.inventory import Material, MaterialCategory, Recipe
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
 

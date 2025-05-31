@@ -6,7 +6,7 @@ from uuid import UUID
 from constants.options import FilterOp
 from constants.status import OrderStatus
 from constants.types import Filter
-from models.order import Order, OrderItem
+from models.domains.order import Order, OrderItem
 from repositories.bases.crud_repo import CrudRepository
 from services.platform.client_service import SupabaseClient
 
@@ -240,12 +240,14 @@ class OrderItemRepository(CrudRepository[OrderItem, UUID]):
         if not order_items:
             return True  # 削除対象がなければ成功とみなす
 
-        # 各明細を削除
-        for item in order_items:
-            if item.id:
-                success = await self.delete(item.id)
-                if not success:
-                    return False
+        # 一括削除でパフォーマンス向上
+        item_ids = [item.id for item in order_items if item.id]
+        if item_ids:
+            try:
+                await self.bulk_delete(item_ids)
+                return True
+            except Exception:
+                return False
 
         return True
 

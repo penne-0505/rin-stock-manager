@@ -1,8 +1,9 @@
 from uuid import UUID
 
 from constants.options import FilterOp
-from models.inventory import MaterialUsageCalculation
-from models.menu import MenuAvailabilityInfo, MenuCategory, MenuItem
+from models.dto.inventory import MaterialUsageCalculation
+from models.domains.menu import MenuCategory, MenuItem
+from models.dto.menu import MenuAvailabilityInfo
 from repositories.domains.inventory_repo import MaterialRepository, RecipeRepository
 from repositories.domains.menu_repo import MenuCategoryRepository, MenuItemRepository
 from services.platform.client_service import SupabaseClient
