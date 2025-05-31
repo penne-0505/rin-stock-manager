@@ -1,13 +1,7 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
-from models._base import CoreBaseModel
-
-# ============================================================================
-# Domain Models
-# ============================================================================
+from models.bases._base import CoreBaseModel
 
 
 class DailySummary(CoreBaseModel):
@@ -29,19 +23,3 @@ class DailySummary(CoreBaseModel):
     @classmethod
     def __table_name__(cls) -> str:
         return "daily_summaries"
-
-
-# ============================================================================
-# DTO and Request Models
-# ============================================================================
-
-
-@dataclass
-class DailyStatsResult:
-    """日次統計結果"""
-
-    completed_orders: int
-    pending_orders: int
-    total_revenue: int
-    average_prep_time_minutes: int | None
-    most_popular_item: dict[str, Any] | None

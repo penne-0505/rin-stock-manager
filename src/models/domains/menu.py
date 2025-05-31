@@ -1,12 +1,7 @@
-from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
-from models._base import CoreBaseModel
-
-# ============================================================================
-# Domain Models
-# ============================================================================
+from models.bases._base import CoreBaseModel
 
 
 class MenuCategory(CoreBaseModel):
@@ -61,18 +56,3 @@ class MenuItemOption(CoreBaseModel):
     @classmethod
     def __table_name__(cls) -> str:
         return "menu_item_options"
-
-
-# ============================================================================
-# DTO and Request Models
-# ============================================================================
-
-
-@dataclass
-class MenuAvailabilityInfo:
-    """メニュー在庫可否情報"""
-
-    menu_item_id: UUID
-    is_available: bool
-    missing_materials: list[str] = field(default_factory=list)  # 不足材料名のリスト
-    estimated_servings: int | None = None  # 作れる数量

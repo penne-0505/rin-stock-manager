@@ -1,14 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
 from constants.options import StockLevel, UnitType
-from models._base import CoreBaseModel
-
-# ============================================================================
-# Domain Models
-# ============================================================================
+from models.bases._base import CoreBaseModel
 
 
 class Material(CoreBaseModel):
@@ -71,28 +66,3 @@ class Recipe(CoreBaseModel):
     @classmethod
     def __table_name__(cls) -> str:
         return "recipes"
-
-
-# ============================================================================
-# DTO and Request Models
-# ============================================================================
-
-
-@dataclass
-class MaterialStockInfo:
-    """材料在庫情報（在庫レベル付き）"""
-
-    material: Material
-    stock_level: StockLevel
-    estimated_usage_days: int | None
-    daily_usage_rate: Decimal | None
-
-
-@dataclass
-class MaterialUsageCalculation:
-    """材料使用量計算結果"""
-
-    material_id: UUID
-    required_amount: Decimal
-    available_amount: Decimal
-    is_sufficient: bool

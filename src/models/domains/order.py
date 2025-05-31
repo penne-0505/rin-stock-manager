@@ -1,14 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from constants.options import PaymentMethod
 from constants.status import OrderStatus
-from models._base import CoreBaseModel
-
-# ============================================================================
-# Domain Models
-# ============================================================================
+from models.bases._base import CoreBaseModel
 
 
 class Order(CoreBaseModel):
@@ -51,51 +46,3 @@ class OrderItem(CoreBaseModel):
     @classmethod
     def __table_name__(cls) -> str:
         return "order_items"
-
-
-# ============================================================================
-# DTO and Request Models
-# ============================================================================
-
-
-@dataclass
-class CartItemRequest:
-    """カートアイテム追加/更新リクエスト"""
-
-    menu_item_id: UUID
-    quantity: int
-    selected_options: dict[str, str] | None = None
-    special_request: str | None = None
-
-
-@dataclass
-class OrderCheckoutRequest:
-    """注文確定リクエスト"""
-
-    payment_method: PaymentMethod
-    customer_name: str | None = None
-    discount_amount: int = 0
-    notes: str | None = None
-
-
-@dataclass
-class OrderSearchRequest:
-    """注文検索リクエスト"""
-
-    date_from: datetime | None = None
-    date_to: datetime | None = None
-    status_filter: list[OrderStatus] | None = None
-    customer_name: str | None = None
-    menu_item_name: str | None = None
-    page: int = 1
-    limit: int = 20
-
-
-@dataclass
-class OrderCalculationResult:
-    """注文金額計算結果"""
-
-    subtotal: int
-    tax_amount: int
-    discount_amount: int
-    total_amount: int

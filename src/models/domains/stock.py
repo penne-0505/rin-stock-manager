@@ -1,14 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
 from constants.options import ReferenceType, TransactionType
-from models._base import CoreBaseModel
-
-# ============================================================================
-# Domain Models
-# ============================================================================
+from models.bases._base import CoreBaseModel
 
 
 class StockTransaction(CoreBaseModel):
@@ -75,35 +70,3 @@ class StockAdjustment(CoreBaseModel):
     @classmethod
     def __table_name__(cls) -> str:
         return "stock_adjustments"
-
-
-# ============================================================================
-# DTO and Request Models
-# ============================================================================
-
-
-@dataclass
-class StockUpdateRequest:
-    """在庫更新リクエスト"""
-
-    material_id: UUID
-    new_quantity: Decimal
-    reason: str
-    notes: str | None = None
-
-
-@dataclass
-class PurchaseRequest:
-    """仕入れリクエスト"""
-
-    items: list[PurchaseItem]
-    purchase_date: datetime
-    notes: str | None = None
-
-
-@dataclass
-class PurchaseItem:
-    """仕入れアイテム"""
-
-    material_id: UUID
-    quantity: Decimal

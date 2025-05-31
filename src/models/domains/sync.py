@@ -1,10 +1,10 @@
+import warnings
 from datetime import datetime
 from uuid import UUID
 
-from models._base import CoreBaseModel
+from models.bases._base import CoreBaseModel
 
 
-# 未使用、オフライン対応用
 class SyncRecord(CoreBaseModel):
     id: UUID | None = None
     record_type: str  # 対象テーブル名
@@ -16,4 +16,8 @@ class SyncRecord(CoreBaseModel):
 
     @classmethod
     def __table_name__(cls) -> str:
+        warnings.warn(
+            "Offline SyncRecord not implemented—returns placeholder `table_name`.",
+            DeprecationWarning,
+        )
         return "sync_records"
