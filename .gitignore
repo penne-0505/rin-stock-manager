@@ -144,3 +144,4 @@ poetry.lock
 
 # Claude Code
 CLAUDE.md
+.claude/
