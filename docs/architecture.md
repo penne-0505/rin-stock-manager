@@ -152,12 +152,15 @@ Infrastructure services for external integrations:
 
 #### Business Services (`src/services/business/`)
 
-Domain-specific business logic (interfaces defined, implementations pending):
+Domain-specific business logic (fully implemented with comprehensive functionality):
 
-- **`analysis_service.py`**: Analytics and reporting logic
-- **`inventory_service.py`**: Inventory management business rules
-- **`menu_service.py`**: Menu management operations
-- **`order_service.py`**: Order processing workflows
+- **`analysis_service.py`**: Analytics and reporting with real-time statistics, popular items ranking, performance metrics, and material consumption analysis
+- **`inventory_service.py`**: Complete inventory management including material creation, stock monitoring, automatic consumption/restoration, and purchase recording
+- **`menu_service.py`**: Menu management with real-time availability checking, search functionality, and stock-based updates
+- **`order_service.py`**: Complete order workflow with three service classes:
+  - **CartService**: Shopping cart management with validation
+  - **OrderService**: Order lifecycle and history management
+  - **KitchenService**: Kitchen operations and queue optimization
 
 ### 5. Offline Support Architecture
 
