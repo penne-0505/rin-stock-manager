@@ -8,7 +8,7 @@ from constants.types import Filter, OrderBy, PKMap
 from models.bases._base import CoreBaseModel
 from services.platform.client_service import SupabaseClient
 from utils.query_utils import apply_filters_to_query, apply_order_by_to_query
-from utils.serializers import bulk_serialize_for_supabase, serialize_for_supabase
+from utils.serializers import serialize_for_supabase, bulk_serialize_for_supabase
 
 M = TypeVar("M", bound=CoreBaseModel)
 ID = TypeVar("ID")  # 単一主キー値の型（int, str など）
@@ -65,11 +65,7 @@ class CrudRepository(ABC, Generic[M, ID]):
             return []
         serialized_entities = bulk_serialize_for_supabase(entities)
         result = await self.table.insert(serialized_entities).execute()
-        return (
-            [self.model_cls.model_validate(row) for row in result.data]
-            if result.data
-            else []
-        )
+        return [self.model_cls.model_validate(row) for row in result.data] if result.data else []
 
     # -------- get ------------------------------------------------------
     @overload
@@ -112,7 +108,7 @@ class CrudRepository(ABC, Generic[M, ID]):
         """複数のキーで一括削除"""
         if not keys:
             return
-
+        
         # 単一カラムPKの場合は効率的なin演算子を使用
         if len(self.pk_cols) == 1:
             pk_col = self.pk_cols[0]

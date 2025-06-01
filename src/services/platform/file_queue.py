@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import asyncio
 import json
 import os
 from pathlib import Path
@@ -21,7 +20,7 @@ class FileQueue:
 
     def __init__(
         self, queue_file_path: Path | None = None, max_bytes: int | None = None
-    ):
+    ):  # max_bytes 引数を追加
         if queue_file_path:
             self.queue_file = queue_file_path
         else:
@@ -39,10 +38,13 @@ class FileQueue:
                     self.queue_file, "a", encoding="utf-8", newline=""
                 ) as f:
                     await f.write(json.dumps(record) + "\n")
+                # _gc_if_needed はロック内で呼び出す
                 await self._gc_if_needed()
             except Exception:
+                # キュー書き込み中のエラー
                 pass
             finally:
+                # プッシュに成功した場合
                 pass
 
     async def pop_all(self) -> list[dict]:
@@ -52,13 +54,13 @@ class FileQueue:
                 return []
             items = []
             try:
+                # newline='' を追加 (読み取り時も念のため)
                 async with aiofiles.open(
                     self.queue_file, "r", encoding="utf-8", newline=""
                 ) as f:
                     async for line in f:
                         try:
                             items.append(json.loads(line))
-                        except json.JSONDecodeError:
                         except json.JSONDecodeError:
                             pass
 
@@ -67,19 +69,18 @@ class FileQueue:
             except FileNotFoundError:
                 return []
             except Exception:
-            except Exception:
                 raise
             finally:
                 pass
 
     async def size(self) -> int:
+        """キューファイルの現在のサイズをバイト単位で返します。"""
         try:
             if await aios.path.exists(self.queue_file):
                 stat_result = await aios.stat(self.queue_file)
                 return stat_result.st_size
             else:
                 return 0
-        except Exception:
         except Exception:
             return 0
 
@@ -113,13 +114,9 @@ class FileQueue:
             pass
         except Exception:
             pass
-        except Exception:
-            pass
         finally:
             if await aios.path.exists(temp_queue_file):
                 try:
                     await aios.unlink(temp_queue_file)
-                except Exception:
-                    pass
                 except Exception:
                     pass

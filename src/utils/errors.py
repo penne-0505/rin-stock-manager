@@ -14,5 +14,5 @@ class ConflictError(RepositoryError):
     """競合が発生した場合に送出."""
 
 
-class ValidationError(RepositoryError):
+class ValidationError(RepositoryError):  # 使用未定
     """入力データの検証に失敗した場合に送出."""

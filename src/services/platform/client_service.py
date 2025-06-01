@@ -89,6 +89,7 @@ class SupabaseClient:
             if user_response and user_response.user:
                 return user_response.user, None
             else:
+                # ユーザー情報取得失敗
                 return None
         except Exception as e:
             raise RuntimeError(
