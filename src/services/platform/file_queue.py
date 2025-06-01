@@ -20,7 +20,7 @@ class FileQueue:
 
     def __init__(
         self, queue_file_path: Path | None = None, max_bytes: int | None = None
-    ):
+    ):  # max_bytes 引数を追加
         if queue_file_path:
             self.queue_file = queue_file_path
         else:
@@ -31,24 +31,30 @@ class FileQueue:
         self.max_bytes = max_bytes if max_bytes is not None else DEFAULT_MAX_BYTES
 
     async def push(self, record: dict) -> None:
-        async with self._lock:
+        """レコードをキューに追加します。"""
+        async with self._lock:  # ロックを取得
             try:
                 async with aiofiles.open(
                     self.queue_file, "a", encoding="utf-8", newline=""
                 ) as f:
                     await f.write(json.dumps(record) + "\n")
+                # _gc_if_needed はロック内で呼び出す
                 await self._gc_if_needed()
             except Exception:
+                # キュー書き込み中のエラー
                 pass
             finally:
+                # プッシュに成功した場合
                 pass
 
     async def pop_all(self) -> list[dict]:
-        async with self._lock:
+        """キューからすべてのレコードを取り出します。"""
+        async with self._lock:  # ロックを取得
             if not await aios.path.exists(self.queue_file):
                 return []
             items = []
             try:
+                # newline='' を追加 (読み取り時も念のため)
                 async with aiofiles.open(
                     self.queue_file, "r", encoding="utf-8", newline=""
                 ) as f:
@@ -64,8 +70,11 @@ class FileQueue:
                 return []
             except Exception:
                 raise
+            finally:
+                pass
 
     async def size(self) -> int:
+        """キューファイルの現在のサイズをバイト単位で返します。"""
         try:
             if await aios.path.exists(self.queue_file):
                 stat_result = await aios.stat(self.queue_file)
@@ -76,11 +85,14 @@ class FileQueue:
             return 0
 
     async def _gc_if_needed(self):
+        """キューファイルが最大サイズを超えた場合にガベージコレクションを実行します。"""
         temp_queue_file = self.queue_file.with_suffix(".tmp")
         try:
-            current_size = await self.size()
-            if current_size <= self.max_bytes:
+            current_size = await self.size()  # size() はロックを取得しない
+            if current_size <= self.max_bytes:  # self.max_bytes を参照
                 return
+            else:
+                pass
 
             lines_to_keep_buffer = []
             async with aiofiles.open(

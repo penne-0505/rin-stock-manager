@@ -133,8 +133,15 @@ cython_debug/
 # IDE - JetBrains
 .idea/
 
+# Firebase Studio(Project IDX) settings
+.idx/
+
 # poetry
 poetry.lock
 
 # github copilot
 .github/
+
+# Claude Code
+CLAUDE.md
+.claude/

@@ -1,162 +1,173 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Generic, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import Any, Generic, TypeVar, overload
 
-from pydantic import BaseModel
+from constants.types import Filter, OrderBy, PKMap
+from models.bases._base import CoreBaseModel
+from services.platform.client_service import SupabaseClient
+from utils.query_utils import apply_filters_to_query, apply_order_by_to_query
+from utils.serializers import serialize_for_supabase, bulk_serialize_for_supabase
 
-from services.client_service import SupabaseClient
-from utils.errors import (
-    ConflictError,
-    NotFoundError,
-    RecordNotFoundError,
-    RepositoryError,
-)
-
-T = TypeVar("T", bound=BaseModel)
-
-Filter = dict[str, Any]  # e.g. {"user_id": "xxx", "date_gte": "2025-05-01"}
-OrderBy = str | list[str] | None  # "date.desc", ["date", "created_at.desc"]
+M = TypeVar("M", bound=CoreBaseModel)
+ID = TypeVar("ID")  # 単一主キー値の型（int, str など）
 
 
-class CrudRepository(ABC, Generic[T]):
-    def __init__(self, client: SupabaseClient, table: str) -> None:
-        if not client.supabase_client:
-            raise RepositoryError("SupabaseClient is not initialized.")
+class CrudRepository(ABC, Generic[M, ID]):
+    def __init__(
+        self,
+        client: SupabaseClient,
+        model_cls: type[M],
+        *,
+        pk_cols: Sequence[str] | None = None,  # 複合 PK 対応
+    ) -> None:
+        self._client = client.supabase_client
+        self.model_cls = model_cls
+        self.pk_cols: Sequence[str] = pk_cols or ("id",)  # 既定は単一 id
+        self.table = self._client.table(self.model_cls.__table_name__())
 
-        self.client = client.supabase_client
-        self._table = table
-
-    # ---------- 基本 CRUD ----------
-    async def create(self, entity: T, *, returning: bool = True) -> T | None:
-        try:
-            q = self.client.table(self._table).insert(entity.model_dump())
-            if returning:
-                data = await q.single()
-                return entity.__class__.parse_obj(data)
-            await q.execute()
-            return None
-        except Exception as e:
-            if isinstance(e, ConflictError):
-                raise ConflictError(f"Conflict error: {e}")
-            raise RepositoryError(f"Repository error: {e}")
-
-    async def get(self, id_: str, *, for_update: bool = False) -> T | None:
-        try:
-            q = self.client.table(self._table).select("*", count="exact").eq("id", id_)
-            if for_update:
-                q = q.filter("", "for_update")  # ←PostgREST拡張SQL
-            data = await q.single()
-            return None if data is None else self._model_from(data)
-        except Exception as e:
-            if isinstance(e, NotFoundError):
-                raise NotFoundError(f"Record with id {id_} not found.")
-            raise RepositoryError(f"Repository error: {e}")
-
-    async def update(self, id_: str, patch: dict[str, Any]) -> T:
-        try:
-            data = await (
-                self.client.table(self._table).update(patch).eq("id", id_).single()
+    # =================================================================
+    # internal helpers (private)
+    # =================================================================
+    def _normalize_key(self, key: ID | PKMap) -> PKMap:
+        if isinstance(key, Mapping):
+            return key
+        # 単一値の場合、pk_cols は 1 列であるはず
+        if len(self.pk_cols) != 1:
+            raise ValueError(
+                "Composite primary key requires a mapping of column→value",
             )
-            if not data:
-                raise RecordNotFoundError(f"Record with id {id_} not found.")
-            return self._model_from(data)
-        except Exception as e:
-            if isinstance(e, NotFoundError):
-                raise NotFoundError(f"Record with id {id_} not found.")
-            raise RepositoryError(f"Repository error: {e}")
+        return {self.pk_cols[0]: key}
 
-    async def delete(self, id_: str) -> None:
-        try:
-            await self.client.table(self._table).delete().eq("id", id_).execute()
-        except Exception as e:
-            if isinstance(e, NotFoundError):
-                raise NotFoundError(f"Record with id {id_} not found.")
-            raise RepositoryError(f"Repository error: {e}")
+    def _apply_pk(self, query: Any, key: PKMap):
+        for col in self.pk_cols:
+            try:
+                query = query.eq(col, key[col])
+            except KeyError as exc:
+                raise KeyError(
+                    f"Missing primary key column '{col}' in key mapping"
+                ) from exc
+        return query
 
-    # ---------- クエリユーティリティ ----------
-    async def list(
-        self,
-        *,
-        filters: Filter | None = None,
-        order_by: OrderBy | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> list[T]:
-        q = self._apply_filters(filters)
-        if order_by:
-            q = q.order(*order_by) if isinstance(order_by, list) else q.order(order_by)
-        if limit:
-            q = q.limit(limit, offset or 0)
-        data = await q.execute()
-        return [self._model_from(d) for d in data]
+    # ==================================================================
+    # CRUD operations
+    # ==================================================================
 
-    async def count(self, *, filters: Filter | None = None) -> int:
-        q = self._apply_filters(filters).select("id", count="exact")
-        _, count = await q.execute()
-        return count
+    # -------- create ---------------------------------------------------
+    async def create(self, entity: M) -> M | None:
+        serialized_entity = serialize_for_supabase(entity)
+        result = await self.table.insert(serialized_entity).execute()
+        return self.model_cls.model_validate(result.data[0]) if result.data else None
 
-    async def exists(self, *, filters: Filter | None = None) -> bool:
-        return (await self.count(filters=filters)) > 0
-
-    # ---------- Supabase/PostgREST 特化 ----------
-    async def upsert(
-        self,
-        entity: T,
-        *,
-        on_conflict: str | list[str] = "id",
-        returning: bool = True,
-    ) -> T | None:
-        q = self.client.table(self._table).upsert(
-            entity.model_dump(), on_conflict=on_conflict
-        )
-        data = await (q.single() if returning else q.execute())
-        return None if data is None else self._model_from(data)
-
-    async def rpc(self, func_name: str, params: dict[str, Any]) -> Any:
-        return await self.client.rpc(func_name, params).execute()
-
-    # ---------- バルク ----------
-    async def bulk_insert(
-        self, entities: list[T], *, ignore_conflict: bool = False
-    ) -> list[T]:
+    async def bulk_create(self, entities: Sequence[M]) -> list[M]:
         if not entities:
             return []
-        q = self.client.table(self._table).insert(
-            [e.model_dump() for e in entities], ignore_duplicates=ignore_conflict
+        serialized_entities = bulk_serialize_for_supabase(entities)
+        result = await self.table.insert(serialized_entities).execute()
+        return [self.model_cls.model_validate(row) for row in result.data] if result.data else []
+
+    # -------- get ------------------------------------------------------
+    @overload
+    async def get(self, key: ID) -> M | None:  # 単一キー糖衣
+        ...
+
+    @overload
+    async def get(self, key: PKMap) -> M | None:  # 複合キー
+        ...
+
+    async def get(self, key):  # type: ignore[override]
+        pk = self._normalize_key(key)
+        row = await self._apply_pk(self.table.select("*"), pk).single().execute()
+        return self.model_cls.model_validate(row.data) if row.data else None
+
+    # -------- update ---------------------------------------------------
+    @overload
+    async def update(self, key: ID, patch: Mapping[str, Any]) -> M | None: ...
+
+    @overload
+    async def update(self, key: PKMap, patch: Mapping[str, Any]) -> M | None: ...
+
+    async def update(self, key, patch):  # type: ignore[override]
+        pk = self._normalize_key(key)
+        result = await self._apply_pk(self.table.update(patch), pk).execute()
+        return self.model_cls.model_validate(result.data[0]) if result.data else None
+
+    # -------- delete ---------------------------------------------------
+    @overload
+    async def delete(self, key: ID) -> None: ...
+
+    @overload
+    async def delete(self, key: PKMap) -> None: ...
+
+    async def delete(self, key):  # type: ignore[override]
+        pk = self._normalize_key(key)
+        await self._apply_pk(self.table.delete(), pk).execute()
+
+    async def bulk_delete(self, keys: Sequence[ID | PKMap]) -> None:
+        """複数のキーで一括削除"""
+        if not keys:
+            return
+        
+        # 単一カラムPKの場合は効率的なin演算子を使用
+        if len(self.pk_cols) == 1:
+            pk_col = self.pk_cols[0]
+            values = []
+            for key in keys:
+                normalized = self._normalize_key(key)
+                values.append(normalized[pk_col])
+            await self.table.delete().in_(pk_col, values).execute()
+        else:
+            # 複合PKの場合は個別削除（現状の制限）
+            for key in keys:
+                await self.delete(key)
+
+    # -------- exists ---------------------------------------------------
+    @overload
+    async def exists(self, key: ID) -> bool: ...
+
+    @overload
+    async def exists(self, key: PKMap) -> bool: ...
+
+    async def exists(self, key):  # type: ignore[override]
+        pk = self._normalize_key(key)
+        rows = await self._apply_pk(self.table.select("1"), pk).limit(1).execute()
+        return bool(rows.data)
+
+    # ==================================================================
+    # listing & searching
+    # ==================================================================
+    async def list(self, *, limit: int = 100, offset: int = 0) -> list[M]:
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+        rows = await self.table.select("*").range(offset, offset + limit - 1).execute()
+        return (
+            [self.model_cls.model_validate(r) for r in rows.data] if rows.data else []
         )
-        data = await q.execute()
-        return [self._model_from(d) for d in data]
 
-    async def bulk_update(
+    async def find(
         self,
-        rows: list[dict[str, Any]],
+        filters: Filter | None = None,
+        order_by: OrderBy | None = None,
         *,
-        key: str = "id",
-    ) -> list[T]:
-        if not rows:
-            return []
-        q = self.client.table(self._table).upsert(rows, on_conflict=key)
-        data = await q.execute()
-        return [self._model_from(d) for d in data]
-
-    # ---------- ロック ----------
-    async def get_for_update(self, id_: str) -> T | None:
-        return await self.get(id_, for_update=True)
-
-    # ---------- 内部ヘルパ ----------
-    def _apply_filters(self, filters: Filter | None):
-        q = self.client.table(self._table).select("*")
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[M]:
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+        query = self.table.select("*").range(offset, offset + limit - 1)
         if filters:
-            for k, v in filters.items():
-                if k.endswith("_gte"):
-                    q = q.gte(k[:-4], v)
-                elif k.endswith("_lte"):
-                    q = q.lte(k[:-4], v)
-                else:
-                    q = q.eq(k, v)
-        return q
+            query = apply_filters_to_query(query, filters)
+        if order_by:
+            query = apply_order_by_to_query(query, order_by)
+        rows = await query.execute()
+        return (
+            [self.model_cls.model_validate(r) for r in rows.data] if rows.data else []
+        )
 
-    @staticmethod
-    def _model_from(raw: dict[str, Any]) -> T:  # type: ignore[override]
-        return T.__constraints__[0].parse_obj(raw)  # Pydantic generic hack
+    async def count(self, filters: Filter | None = None) -> int:
+        query = self.table.select("id", count="exact", head=True)
+        if filters:
+            query = apply_filters_to_query(query, filters)
+        resp = await query.execute()
+        return resp.count  # type: ignore[attr-defined]
