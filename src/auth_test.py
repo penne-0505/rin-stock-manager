@@ -22,7 +22,6 @@ from services.business.order_service import OrderService
 # 最新の実装に合わせてインポートを修正
 from services.platform.client_service import SupabaseClient
 
-# AuthService のインスタンスを作成
 auth_service = SupabaseClient()
 
 
@@ -42,7 +41,6 @@ async def handle_login_button_click(pg: Page):
 
 
 async def handle_auth_callback(url: str, pg: Page):
-    """認証コールバック処理"""
     if not auth_service.supabase_client:
         show_snackbar(pg, "Supabase clientが初期化されていません。")
         return
@@ -139,7 +137,7 @@ async def handle_auth_callback(url: str, pg: Page):
 def show_snackbar(pg: Page, message: str):
     """スナックバーを表示する"""
     snack_bar = SnackBar(Text(message))
-    pg.controls.append(snack_bar)  # snack_bar を pg.controls に追加してから open する
+    pg.controls.append(snack_bar)
     snack_bar.open = True
     pg.update()
 
@@ -152,9 +150,7 @@ def main(pg: Page):
     async def route_change(e: RouteChangeEvent):
         if e.route.startswith("/auth/callback"):
             url = e.route
-            await handle_auth_callback(
-                url, pg
-            )  # handle_callback を handle_auth_callback に変更
+            await handle_auth_callback(url, pg)
         else:
             pg.controls.clear()
             pg.controls.append(
@@ -163,7 +159,6 @@ def main(pg: Page):
                         Text("Google アカウントでサインアップ / ログイン"),
                         ElevatedButton(
                             "Google でログイン",
-                            # login 関数呼び出しを handle_login_button_click に変更
                             on_click=lambda _: pg.run_task(
                                 handle_login_button_click, pg
                             ),
@@ -176,7 +171,6 @@ def main(pg: Page):
             try:
                 pg.update()
             except Exception:
-                # ページアップデート中のエラー
                 pass
 
     pg.on_route_change = route_change
