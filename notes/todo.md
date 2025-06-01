@@ -15,3 +15,9 @@
     - [ ] utils/filters.pyのレビュー・修正・リファクタ
 - [ ] 全ファイルのテストケース作成？
 - [ ] あらゆる箇所において不明瞭なエラーハンドリングのルールを定義する
+- [ ] サービスレイヤのメソッド群の精査・ユースケースから考えて拡張
+    - [ ] analysis_service.py
+    - [ ] inventory_service.py
+    - [ ] menu_service.py
+    - [ ] order_service.py
+    - [ ] 追加？

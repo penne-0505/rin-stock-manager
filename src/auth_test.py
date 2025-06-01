@@ -1,7 +1,22 @@
-import flet as ft
-from flet import Column, ElevatedButton, Page, RouteChangeEvent, SnackBar, Text, app
+from decimal import Decimal
+from uuid import UUID
 
-from models.order import OrderSearchRequest
+import flet as ft
+from flet import (
+    Column,
+    ElevatedButton,
+    FloatingActionButton,
+    Page,
+    RouteChangeEvent,
+    SnackBar,
+    Text,
+    app,
+)
+
+from constants.options import UnitType
+from models.domains.inventory import Material
+from models.dto.order import OrderSearchRequest
+from services.business.inventory_service import InventoryService
 from services.business.order_service import OrderService
 
 # 最新の実装に合わせてインポートを修正
@@ -13,6 +28,8 @@ auth_service = SupabaseClient()
 
 async def handle_login_button_click(pg: Page):
     """ログインボタンクリック時の処理"""
+    await auth_service.init_client()
+
     if not auth_service.supabase_client:
         show_snackbar(pg, "Supabase clientが初期化されていません。")
         return
@@ -41,7 +58,12 @@ async def handle_auth_callback(url: str, pg: Page):
 
     pg.controls.clear()
     if user and hasattr(user, "email"):
-        pg.controls.append(Text(f"ログイン成功！こんにちは {user.email}"))
+        pg.controls.append(Text(f"ログイン成功！こんにちは `{user.email}` さん！"))
+
+        # ページを更新するためのfloating buttonを作成
+        pg.controls.append(
+            FloatingActionButton(icon=ft.Icons.REFRESH, on_click=lambda _: pg.update())
+        )
 
         # 最新の実装に合わせて OrderService を初期化
         order_service = OrderService(auth_service)
@@ -57,6 +79,33 @@ async def handle_auth_callback(url: str, pg: Page):
             menu_item_name=None,
         )
 
+        # 在庫のデモデータを追加するボタンを作成
+        inventory_service = InventoryService(auth_service)
+        temp_data = Material(
+            name="temp_material",
+            category_id=UUID("6bba9a48-6798-4d88-8e50-677dace1f33f"),
+            unit_type=UnitType.PIECE,
+            current_stock=Decimal("100.00"),
+            alert_threshold=Decimal("20.00"),
+            critical_threshold=Decimal("10.00"),
+            notes="this is a temporary material for demo purposes",
+        )
+        pg.controls.append(
+            ElevatedButton(
+                "在庫デモデータを追加",
+                on_click=lambda _: pg.run_task(
+                    inventory_service.create_material, temp_data, user.id
+                ),
+            )
+        )
+
+        # TODO: このファイルに、DB操作をUI経由でテストするコードを追加する
+
+        all_material = await inventory_service.material_repo.find()
+        pg.controls.append(
+            Text(f"全ての材料: {', '.join([m.name for m in all_material])}")
+        )
+
         try:
             # get_order_by_filter の代わりに get_order_history を使用
             result = await order_service.get_order_history(search_request, user.id)
@@ -68,8 +117,8 @@ async def handle_auth_callback(url: str, pg: Page):
                 for order in orders:
                     pg.controls.append(Text(f"注文ID: {order.id}"))
                     # 注文明細を取得
-                    order_items = await order_service.order_item_repo.find_by_order_id(
-                        order.id
+                    order_items = await order_service.get_order_details(
+                        order.id, user.id
                     )
                     for item in order_items:
                         pg.controls.append(
